@@ -1,11 +1,5 @@
 <?php
 
-// Only for phpunit
-$autoloadFile = dirname(__FILE__) . "/vendor/autoload.php";
-if (file_exists($autoloadFile)) {
-    include_once $autoloadFile;
-}
-
 class RationalNumber {
     private $numerator;
     private $denominator;
