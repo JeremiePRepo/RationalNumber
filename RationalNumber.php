@@ -1,6 +1,10 @@
 <?php
 
-include_once dirname(__FILE__)."/vendor/autoload.php";
+// Only for phpunit
+$autoloadFile = dirname(__FILE__) . "/vendor/autoload.php";
+if (file_exists($autoloadFile)) {
+    include_once $autoloadFile;
+}
 
 class RationalNumber {
     private $numerator;
@@ -219,7 +223,7 @@ class RationalNumber {
     public function toString() {
         return $this->numerator . "/" . $this->denominator;
     }
-    
+
     /**
      * Convert the rational number to a string representation.
      * @return string The rational number as a string in the format "numerator/denominator".
