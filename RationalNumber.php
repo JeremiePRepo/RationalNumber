@@ -219,6 +219,15 @@ class RationalNumber {
     public function toString() {
         return $this->numerator . "/" . $this->denominator;
     }
+    
+    /**
+     * Convert the rational number to a string representation.
+     * @return string The rational number as a string in the format "numerator/denominator".
+     */
+    public function __toString()
+    {
+        return $this->toString();
+    }
 
     /**
      * Calculate the greatest common divisor (GCD) of two integers using the Euclidean algorithm.
@@ -242,91 +251,3 @@ class RationalNumber {
         }
     }
 }
-
-// // Exemples d'utilisation
-// $number1 = new RationalNumber(3, 4);
-// $number2 = new RationalNumber(1, 2);
-
-// $result1 = $number1->add($number2);
-// echo "Addition de " .$number1->toString()." et de ".$number2->toString()." : ". $result1->toString() . "\n";
-// echo "Soit : " . $result1->getFloat() . "\n";
-// echo PHP_EOL;
-
-// $result2 = $number1->multiply($number2);
-// echo "Multiplication de " .$number1->toString()." et de ".$number2->toString()." : ". $result2->toString() . "\n";
-// echo "Soit : " . $result2->getFloat() . "\n";
-// echo PHP_EOL;
-
-// $result3 = $number1->subtract($number2);
-// echo "Soustraction de " .$number1->toString()." par ".$number2->toString()." : ". $result3->toString() . "\n";
-// echo "Soit : " . $result3->getFloat() . "\n";
-// echo PHP_EOL;
-
-// echo "Réciproque de ".$number1->toString()." : " . $number1->reciprocal()->toString() . "\n";
-// echo "Soit : " . $result1->reciprocal()->getFloat() . "\n";
-// echo PHP_EOL;
-
-// // Division de number1 par number2
-// $result4 = $number1->divideBy($number2);
-// echo "Division de " . $number1->toString() . " par " . $number2->toString() . " : " . $result4->toString() . "\n";
-// echo "Soit : " . $result4->getFloat() . "\n";
-// echo PHP_EOL;
-
-// // Division de number2 par number1
-// $result5 = $number1->divideFrom($number2);
-// echo "Division de " . $number2->toString() . " par " . $number1->toString() . " : " . $result5->toString() . "\n";
-// echo "Soit : " . $result5->getFloat() . "\n";
-// echo PHP_EOL;
-
-// $floatValue = 2.5;
-// $numberFromFloat = RationalNumber::fromFloat($floatValue);
-// echo "RationalNumber depuis un float (".$floatValue.") : " . $numberFromFloat->toString() . "\n";
-// echo PHP_EOL;
-
-// $intValue = 5;
-// $numberFromInt = RationalNumber::fromFloat($intValue);
-// echo "RationalNumber depuis un int (".$intValue.") : " . $numberFromInt->toString() . "\n";
-// echo PHP_EOL;
-
-// $negativeFloatValue = -3.75;
-// $numberFromNegativeFloat = RationalNumber::fromFloat($negativeFloatValue);
-// echo "RationalNumber depuis un float négatif (". $negativeFloatValue .") : " . $numberFromNegativeFloat->toString() . "\n";
-// echo PHP_EOL;
-
-// $negativeIntValue = -8;
-// $numberFromNegativeInt = RationalNumber::fromFloat($negativeIntValue);
-// echo "RationalNumber depuis un int négatif (" .$negativeIntValue. ") : " . $numberFromNegativeInt->toString() . "\n";
-// echo PHP_EOL;
-
-// $number = RationalNumber::fromFloat(0.5); // Création d'un nombre de départ (0.5 ou 50%).
-// echo "Nombre de départ : " . $number->toString() . "\n";
-// echo PHP_EOL;
-
-// // Test de toPercentage()
-// $percentageString = $number->toPercentage(2); // Convertir en pourcentage avec 2 décimales.
-// echo "En pourcentage (2 décimales) : " . $percentageString . "\n";
-// echo PHP_EOL;
-
-// // Test de fromPercentage()
-// $percentageValue = "75%";
-// $numberFromPercentage = RationalNumber::fromPercentage($percentageValue);
-// echo "RationalNumber depuis un pourcentage (" . $percentageValue . ") : " . $numberFromPercentage->toString() . "\n";
-// echo PHP_EOL;
-
-// $number = new RationalNumber(100); // Création d'un nombre de départ (100).
-// echo "Nombre de départ : " . $number->toString() . "\n";
-// echo PHP_EOL;
-
-// $increasePercentage = "10%"; // Augmenter de 10%.
-// $increasedRationalNumber = $number->increaseByPercentage($increasePercentage);
-// echo "Augmentation de " . $number->toString() . " de " . $increasePercentage . " : " . $increasedRationalNumber->toString() . "\n";
-// echo PHP_EOL;
-
-// $number = new RationalNumber(200); // Création d'un nombre de départ (200).
-// echo "Nombre de départ : " . $number->toString() . "\n";
-// echo PHP_EOL;
-
-// $decreasePercentage = "25%"; // Diminuer de 25%.
-// $decreasedRationalNumber = $number->decreaseByPercentage($decreasePercentage);
-// echo "Diminution de " . $number->toString() . " de " . $decreasePercentage . " : " . $decreasedRationalNumber->toString() . "\n";
-// echo PHP_EOL;
