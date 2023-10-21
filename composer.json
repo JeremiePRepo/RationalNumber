@@ -1,0 +1,30 @@
+{
+    "name": "jeremie-pasquis/rational-number",
+    "description": "A PHP class for working with rational numbers.",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Jérémie Pasquis"
+        }
+    ],
+    "require": {
+        "php": ">=7.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^6.0"
+    },
+    "config": {
+        "preferred-install": "dist"
+    },
+    "autoload": {
+        "psr-4": {
+            "RationalNumber\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "RationalNumber\\Tests\\": "tests/"
+        }
+    }
+}
