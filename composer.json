@@ -1,7 +1,8 @@
 {
     "name": "jeremie-pasquis/rational-number",
-    "description": "A PHP class for working with rational numbers.",
+    "description": "A type-safe PHP library for precise rational number arithmetic with automatic normalization and percentage operations",
     "type": "library",
+    "keywords": ["rational", "fraction", "arithmetic", "math", "precision", "percentage"],
     "license": "MIT",
     "authors": [
         {
@@ -9,7 +10,7 @@
         }
     ],
     "require": {
-        "php": ">=7.0"
+        "php": ">=7.4"
     },
     "require-dev": {
         "phpunit/phpunit": "^6.0"

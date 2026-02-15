@@ -1,12 +1,14 @@
 <?php
 
-include_once dirname(__FILE__)."/../vendor/autoload.php";
+declare(strict_types=1);
+
+namespace RationalNumber\Tests;
 
 use PHPUnit\Framework\TestCase;
+use RationalNumber\RationalNumber;
 
-require 'RationalNumber.php';
-
-class RationalNumberTest extends TestCase {
+class RationalNumberTest extends TestCase
+{
     public function testAddition() {
         $number1 = new RationalNumber(3, 4);
         $number2 = new RationalNumber(1, 2);
@@ -109,5 +111,73 @@ class RationalNumberTest extends TestCase {
         $result = $number->decreaseByPercentage($decreasePercentage);
         $this->assertEquals("150/1", $result->toString());
         $this->assertEquals(150, $result->getFloat());
+    }
+
+    public function testZeroDenominatorThrowsException() {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage("Denominator cannot be zero.");
+        new RationalNumber(1, 0);
+    }
+
+    public function testReciprocalOfZeroThrowsException() {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage("Cannot get reciprocal of zero.");
+        $zero = new RationalNumber(0, 1);
+        $zero->reciprocal();
+    }
+
+    public function testDivideByZeroThrowsException() {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage("Cannot divide by zero.");
+        $number = new RationalNumber(5, 1);
+        $zero = new RationalNumber(0, 1);
+        $number->divideBy($zero);
+    }
+
+    public function testDivideFromZeroThrowsException() {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage("Cannot divide by zero.");
+        $zero = new RationalNumber(0, 1);
+        $number = new RationalNumber(5, 1);
+        $zero->divideFrom($number);
+    }
+
+    public function testNegativeDenominatorIsNormalized() {
+        $number = new RationalNumber(3, -4);
+        $this->assertEquals("-3/4", $number->toString());
+        $this->assertEquals(-0.75, $number->getFloat());
+    }
+
+    public function testNegativeNumbersAreNormalized() {
+        $number = new RationalNumber(-6, -8);
+        $this->assertEquals("3/4", $number->toString());
+        $this->assertEquals(0.75, $number->getFloat());
+    }
+
+    public function testIsZero() {
+        $zero = new RationalNumber(0, 5);
+        $notZero = new RationalNumber(1, 5);
+        $this->assertTrue($zero->isZero());
+        $this->assertFalse($notZero->isZero());
+    }
+
+    public function testIsInteger() {
+        $integer = new RationalNumber(5, 1);
+        $notInteger = new RationalNumber(5, 2);
+        $this->assertTrue($integer->isInteger());
+        $this->assertFalse($notInteger->isInteger());
+    }
+
+    public function testReduce() {
+        $number = new RationalNumber(6, 8);
+        // Note: already normalized in constructor, but reduce() returns new instance
+        $this->assertEquals("3/4", $number->toString());
+        $reduced = $number->reduce();
+        $this->assertEquals("3/4", $reduced->toString());
+    }
+
+    public function testMagicToString() {
+        $number = new RationalNumber(3, 4);
+        $this->assertEquals("3/4", (string)$number);
     }
 }
