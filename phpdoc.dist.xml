@@ -12,7 +12,7 @@
     </paths>
     <version number="latest">
         <api>
-            <source dsn=".">
+            <source>
                 <path>src</path>
             </source>
             <ignore>
