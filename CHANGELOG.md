@@ -3,7 +3,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [2.7.0] - 2026-02-16
 
 ### Added
 
@@ -26,6 +26,7 @@ All notable changes to this project will be documented in this file.
   - Scientific notation conversion tests (small, medium, large values)
   - Deprecation warning tests for PercentageCalculator methods
   - Error message validation (GMP hints)
+  - **Total test coverage: 106 tests, 241 assertions** (was 50 tests, 98 assertions)
 
 ### Changed
 
@@ -44,7 +45,7 @@ All notable changes to this project will be documented in this file.
 
 ### Technical Details
 
-- New exception type: `ArithmeticException` (added to imports)
+- Uses `ArithmeticError` (PHP built-in) for overflow detection
 - Enhanced `fromFloat()` with integer input fast-path
 - Overflow detection uses division-based checking: `|a| > PHP_INT_MAX / |b|`
 - Scientific notation parsing handles edge cases (zero, negative, extreme values)
