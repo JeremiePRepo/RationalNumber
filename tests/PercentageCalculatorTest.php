@@ -70,4 +70,129 @@ class PercentageCalculatorTest extends TestCase
         $result = $this->calculator->decreaseBy($number, "10");
         $this->assertEquals("90/1", $result->toString());
     }
+
+    /**
+     * Test that toPercentage triggers deprecation warning
+     */
+    public function testToPercentageTriggersDeprecationWarning(): void
+    {
+        $deprecationTriggered = false;
+        $originalHandler = set_error_handler(function($errno, $errstr) use (&$deprecationTriggered) {
+            if ($errno === E_USER_DEPRECATED && strpos($errstr, 'toPercentage') !== false) {
+                $deprecationTriggered = true;
+            }
+            return true;
+        });
+
+        $number = new RationalNumber(1, 2);
+        $this->calculator->toPercentage($number, 2);
+
+        if ($originalHandler !== null) {
+            set_error_handler($originalHandler);
+        } else {
+            restore_error_handler();
+        }
+
+        $this->assertTrue($deprecationTriggered, 'Deprecation warning should be triggered for toPercentage()');
+    }
+
+    /**
+     * Test that fromPercentage triggers deprecation warning
+     */
+    public function testFromPercentageTriggersDeprecationWarning(): void
+    {
+        $deprecationTriggered = false;
+        $originalHandler = set_error_handler(function($errno, $errstr) use (&$deprecationTriggered) {
+            if ($errno === E_USER_DEPRECATED && strpos($errstr, 'fromPercentage') !== false) {
+                $deprecationTriggered = true;
+            }
+            return true;
+        });
+
+        $this->calculator->fromPercentage("50%");
+
+        if ($originalHandler !== null) {
+            set_error_handler($originalHandler);
+        } else {
+            restore_error_handler();
+        }
+
+        $this->assertTrue($deprecationTriggered, 'Deprecation warning should be triggered for fromPercentage()');
+    }
+
+    /**
+     * Test that increaseBy triggers deprecation warning
+     */
+    public function testIncreaseByTriggersDeprecationWarning(): void
+    {
+        $deprecationTriggered = false;
+        $originalHandler = set_error_handler(function($errno, $errstr) use (&$deprecationTriggered) {
+            if ($errno === E_USER_DEPRECATED && strpos($errstr, 'increaseBy') !== false) {
+                $deprecationTriggered = true;
+            }
+            return true;
+        });
+
+        $number = new RationalNumber(100);
+        $this->calculator->increaseBy($number, "10%");
+
+        if ($originalHandler !== null) {
+            set_error_handler($originalHandler);
+        } else {
+            restore_error_handler();
+        }
+
+        $this->assertTrue($deprecationTriggered, 'Deprecation warning should be triggered for increaseBy()');
+    }
+
+    /**
+     * Test that decreaseBy triggers deprecation warning
+     */
+    public function testDecreaseByTriggersDeprecationWarning(): void
+    {
+        $deprecationTriggered = false;
+        $originalHandler = set_error_handler(function($errno, $errstr) use (&$deprecationTriggered) {
+            if ($errno === E_USER_DEPRECATED && strpos($errstr, 'decreaseBy') !== false) {
+                $deprecationTriggered = true;
+            }
+            return true;
+        });
+
+        $number = new RationalNumber(100);
+        $this->calculator->decreaseBy($number, "25%");
+
+        if ($originalHandler !== null) {
+            set_error_handler($originalHandler);
+        } else {
+            restore_error_handler();
+        }
+
+        $this->assertTrue($deprecationTriggered, 'Deprecation warning should be triggered for decreaseBy()');
+    }
+
+    /**
+     * Test that percentageOf triggers deprecation warning
+     */
+    public function testPercentageOfTriggersDeprecationWarning(): void
+    {
+        $deprecationTriggered = false;
+        $originalHandler = set_error_handler(function($errno, $errstr) use (&$deprecationTriggered) {
+            if ($errno === E_USER_DEPRECATED && strpos($errstr, 'percentageOf') !== false) {
+                $deprecationTriggered = true;
+            }
+            return true;
+        });
+
+        $part = new RationalNumber(1, 2);
+        $whole = new RationalNumber(1, 1);
+        $this->calculator->percentageOf($part, $whole);
+
+        if ($originalHandler !== null) {
+            set_error_handler($originalHandler);
+        } else {
+            restore_error_handler();
+        }
+
+        $this->assertTrue($deprecationTriggered, 'Deprecation warning should be triggered for percentageOf()');
+    }
 }

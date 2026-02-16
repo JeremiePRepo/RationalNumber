@@ -34,14 +34,27 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
     
     /**
      * Create a RationalNumber object from a float or int value.
+     * Supports standard decimal notation and scientific notation (e.g., 1e-10, 1.5e20).
+     * 
      * @param float|int $value The scalar value to create a RationalNumber object from.
      * @return RationalNumber The RationalNumber object created from the scalar value.
+     * @throws ArithmeticError if the conversion would cause integer overflow.
      */
     public static function fromFloat($value): RationalNumber
     {
-        // Determine the denominator based on the number of decimal places.
-        $denominator = 1;
+        // Handle integer input directly
+        if (is_int($value)) {
+            return new self($value, 1);
+        }
+        
+        // Detect and handle scientific notation
         $stringValue = (string) $value;
+        if (stripos($stringValue, 'e') !== false) {
+            return self::fromScientificNotation($value);
+        }
+        
+        // Handle standard decimal notation
+        $denominator = 1;
         $decimalPart = strrchr($stringValue, ".");
         
         if ($decimalPart !== false) {
@@ -51,7 +64,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
             }
         }
 
-        // Convert the scalar value to a rational number.
+        // Convert the scalar value to a rational number
         $numerator = (int)($value * $denominator);
         return new RationalNumber($numerator, $denominator);
     }
@@ -69,12 +82,18 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
      * Multiply the current rational number by another RationalNumber object.
      * @param ArithmeticOperations $number The RationalNumber object to multiply with.
      * @return RationalNumber The result of the multiplication as a new RationalNumber object.
+     * @throws ArithmeticError if the operation would cause integer overflow.
      */
     public function multiply(ArithmeticOperations $number): RationalNumber
     {
         if (!$number instanceof RationalNumber) {
             throw new InvalidArgumentException("Must be a RationalNumber instance.");
         }
+        
+        // Check for potential overflow before multiplication
+        $this->checkMultiplicationOverflow($this->numerator, $number->getNumerator(), 'numerator multiplication');
+        $this->checkMultiplicationOverflow($this->denominator, $number->getDenominator(), 'denominator multiplication');
+        
         $newNumerator = $this->numerator * $number->getNumerator();
         $newDenominator = $this->denominator * $number->getDenominator();
         return new RationalNumber($newNumerator, $newDenominator);
@@ -84,12 +103,19 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
      * Add the current rational number to another RationalNumber object.
      * @param ArithmeticOperations $number The RationalNumber object to add.
      * @return RationalNumber The result of the addition as a new RationalNumber object.
+     * @throws ArithmeticError if the operation would cause integer overflow.
      */
     public function add(ArithmeticOperations $number): RationalNumber
     {
         if (!$number instanceof RationalNumber) {
             throw new InvalidArgumentException("Must be a RationalNumber instance.");
         }
+        
+        // Check for potential overflow in cross-multiplication
+        $this->checkMultiplicationOverflow($this->numerator, $number->getDenominator(), 'addition cross-multiplication');
+        $this->checkMultiplicationOverflow($number->getNumerator(), $this->denominator, 'addition cross-multiplication');
+        $this->checkMultiplicationOverflow($this->denominator, $number->getDenominator(), 'denominator multiplication');
+        
         $newNumerator = $this->numerator * $number->getDenominator() + $number->getNumerator() * $this->denominator;
         $newDenominator = $this->denominator * $number->getDenominator();
         return new RationalNumber($newNumerator, $newDenominator);
@@ -99,12 +125,19 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
      * Subtract another RationalNumber object from the current rational number.
      * @param ArithmeticOperations $number The RationalNumber object to subtract.
      * @return RationalNumber The result of the subtraction as a new RationalNumber object.
+     * @throws ArithmeticError if the operation would cause integer overflow.
      */
     public function subtract(ArithmeticOperations $number): RationalNumber
     {
         if (!$number instanceof RationalNumber) {
             throw new InvalidArgumentException("Must be a RationalNumber instance.");
         }
+        
+        // Check for potential overflow in cross-multiplication
+        $this->checkMultiplicationOverflow($this->numerator, $number->getDenominator(), 'subtraction cross-multiplication');
+        $this->checkMultiplicationOverflow($number->getNumerator(), $this->denominator, 'subtraction cross-multiplication');
+        $this->checkMultiplicationOverflow($this->denominator, $number->getDenominator(), 'denominator multiplication');
+        
         $newNumerator = $this->numerator * $number->getDenominator() - $number->getNumerator() * $this->denominator;
         $newDenominator = $this->denominator * $number->getDenominator();
         return new RationalNumber($newNumerator, $newDenominator);
@@ -414,6 +447,121 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
         $a = abs($a);
         $b = abs($b);
         return ($b === 0) ? $a : $this->gcd($b, $a % $b);
+    }
+
+    /**
+     * Check if a multiplication operation would cause integer overflow.
+     * 
+     * @param int $a The first operand.
+     * @param int $b The second operand.
+     * @param string $operation A description of the operation for error message context.
+     * @return void
+     * @throws ArithmeticError if the multiplication would overflow.
+     */
+    private function checkMultiplicationOverflow(int $a, int $b, string $operation): void
+    {
+        // Zero is always safe
+        if ($a === 0 || $b === 0) {
+            return;
+        }
+        
+        // Check if the result would exceed PHP_INT_MAX or go below PHP_INT_MIN
+        // Use division to check: if a * b would overflow, then |a| > PHP_INT_MAX / |b|
+        $absA = abs($a);
+        $absB = abs($b);
+        
+        if ($absA > PHP_INT_MAX / $absB) {
+            $message = sprintf(
+                "Operation would cause integer overflow during %s. ",
+                $operation
+            );
+            
+            if (extension_loaded('gmp')) {
+                $message .= "Consider using the GMP extension for arbitrary precision arithmetic.";
+            } else {
+                $message .= "Consider installing the GMP extension for handling larger numbers.";
+            }
+            
+            throw new \ArithmeticError($message);
+        }
+    }
+
+    /**
+     * Convert a float in scientific notation to a RationalNumber.
+     * 
+     * @param float $value The float value in scientific notation.
+     * @return RationalNumber The resulting rational number.
+     * @throws ArithmeticError if conversion would cause overflow.
+     */
+    private static function fromScientificNotation(float $value): RationalNumber
+    {
+        // Handle zero specially
+        if ($value == 0.0) {
+            return new self(0, 1);
+        }
+        
+        // Parse scientific notation: extract mantissa and exponent
+        // e.g., "1.5e-10" or "2.3E20"
+        $stringValue = strtolower((string)$value);
+        $parts = explode('e', $stringValue);
+        
+        if (count($parts) !== 2) {
+            // Fallback to standard conversion if parsing fails
+            return self::fromFloat((float)$stringValue);
+        }
+        
+        $mantissa = (float)$parts[0];
+        $exponent = (int)$parts[1];
+        
+        // For negative exponents: mantissa / 10^|exponent|
+        // For positive exponents: mantissa * 10^exponent
+        if ($exponent < 0) {
+            // Small numbers: 1.5e-10 = 15 / 10^11
+            $decimalPlaces = abs($exponent);
+            
+            // Count decimal places in mantissa
+            $mantissaStr = (string)$mantissa;
+            if (strpos($mantissaStr, '.') !== false) {
+                $mantissaDecimals = strlen(substr(strrchr($mantissaStr, '.'), 1));
+                $decimalPlaces += $mantissaDecimals;
+            }
+            
+            // Limit precision to avoid overflow
+            $decimalPlaces = min($decimalPlaces, 15);
+            $denominator = 10 ** $decimalPlaces;
+            $numerator = (int)round($value * $denominator);
+            
+            return new self($numerator, $denominator);
+        } else {
+            // Large numbers: 1.5e20 = 15 * 10^19
+            // Calculate numerator and check for overflow
+            $multiplier = 10 ** $exponent;
+            
+            // Extract decimal places from mantissa
+            $mantissaStr = (string)$mantissa;
+            $denominator = 1;
+            
+            if (strpos($mantissaStr, '.') !== false) {
+                $decimalPlaces = strlen(substr(strrchr($mantissaStr, '.'), 1));
+                $denominator = 10 ** $decimalPlaces;
+                $mantissa = $mantissa * $denominator;
+            }
+            
+            $numerator = (int)$mantissa;
+            
+            // Check if multiplying by 10^exponent would overflow
+            if ($numerator != 0 && abs($multiplier) > PHP_INT_MAX / abs($numerator)) {
+                throw new \ArithmeticError(
+                    "Scientific notation conversion would cause integer overflow. " .
+                    "Value too large for integer representation. " .
+                    (extension_loaded('gmp') 
+                        ? "Consider using GMP extension for arbitrary precision."
+                        : "Consider installing GMP extension for larger numbers.")
+                );
+            }
+            
+            return new self($numerator * $multiplier, $denominator);
+        }
     }
 
     /**

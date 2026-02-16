@@ -3,6 +3,54 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- **Overflow Protection**: Automatic detection of integer overflow in arithmetic operations
+  - Added `checkMultiplicationOverflow()` private method to detect overflow before operations
+  - Applies to `multiply()`, `add()`, and `subtract()` methods
+  - Throws `ArithmeticError` with helpful error messages
+  - Error messages suggest GMP extension for handling larger numbers
+  - Added comprehensive tests for overflow scenarios
+
+- **Scientific Notation Support**: Enhanced `fromFloat()` method
+  - Now handles scientific notation (e.g., `1e-10`, `1.5e20`, `2.3e-5`)
+  - Added `fromScientificNotation()` private method for conversion
+  - Supports both positive and negative exponents
+  - Includes overflow detection for large scientific notation values
+  - Added tests for various scientific notation edge cases
+
+- **New Tests**: Added 13 new tests in `PHP83EdgeCasesTest` and `PercentageCalculatorTest`
+  - Overflow detection tests for multiply, add, subtract operations
+  - Scientific notation conversion tests (small, medium, large values)
+  - Deprecation warning tests for PercentageCalculator methods
+  - Error message validation (GMP hints)
+
+### Changed
+
+- **API Clarification**: Deprecated `PercentageCalculator` class methods
+  - Added `@deprecated` PHPDoc tags to all methods
+  - Added `trigger_error()` calls with `E_USER_DEPRECATED` warnings
+  - Updated documentation to recommend `RationalNumber` instance methods
+  - Methods affected: `toPercentage()`, `fromPercentage()`, `increaseBy()`, `decreaseBy()`, `percentageOf()`
+  - `RationalNumber` percentage methods remain the preferred API
+
+- **Documentation**: Updated README.md with new features
+  - Added "Overflow Protection" section with examples and GMP installation instructions
+  - Updated "Features" list with overflow detection and scientific notation support
+  - Clarified PercentageCalculator deprecation status
+  - Updated percentage examples to use RationalNumber methods
+
+### Technical Details
+
+- New exception type: `ArithmeticException` (added to imports)
+- Enhanced `fromFloat()` with integer input fast-path
+- Overflow detection uses division-based checking: `|a| > PHP_INT_MAX / |b|`
+- Scientific notation parsing handles edge cases (zero, negative, extreme values)
+- All changes follow SOLID principles and maintain backward compatibility
+- Code comments and PHPDoc in English as per project standards
+
 ## [2.6.0] - 2026-02-16
 
 ### Maintenance - Production Release Preparation

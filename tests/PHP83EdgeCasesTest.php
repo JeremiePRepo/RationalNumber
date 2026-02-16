@@ -372,4 +372,128 @@ class PHP83EdgeCasesTest extends TestCase
         $this->assertFalse((new RationalNumber(7, 4))->isInteger());
         $this->assertTrue((new RationalNumber(0, 1))->isInteger());
     }
+
+    /**
+     * Test overflow detection in multiplication
+     */
+    public function testMultiplicationOverflowDetection(): void
+    {
+        $this->expectException(\ArithmeticError::class);
+        $this->expectExceptionMessageMatches('/overflow/i');
+        
+        // Create a number that will overflow when multiplied by itself
+        $largeNum = new RationalNumber(PHP_INT_MAX, 2);
+        $largeNum->multiply($largeNum);
+    }
+
+    /**
+     * Test overflow detection in addition with cross-multiplication
+     */
+    public function testAdditionOverflowDetection(): void
+    {
+        $this->expectException(\ArithmeticError::class);
+        $this->expectExceptionMessageMatches('/overflow/i');
+        
+        // Create numbers that will overflow during cross-multiplication in add()
+        $num1 = new RationalNumber(PHP_INT_MAX, 2);
+        $num2 = new RationalNumber(PHP_INT_MAX, 3);
+        $num1->add($num2);
+    }
+
+    /**
+     * Test overflow detection in subtraction with cross-multiplication
+     */
+    public function testSubtractionOverflowDetection(): void
+    {
+        $this->expectException(\ArithmeticError::class);
+        $this->expectExceptionMessageMatches('/overflow/i');
+        
+        // Create numbers that will overflow during cross-multiplication in subtract()
+        $num1 = new RationalNumber(PHP_INT_MAX, 2);
+        $num2 = new RationalNumber(PHP_INT_MAX, 3);
+        $num1->subtract($num2);
+    }
+
+    /**
+     * Test fromFloat with scientific notation - small numbers
+     */
+    public function testFromFloatScientificNotationSmall(): void
+    {
+        $smallNumber = RationalNumber::fromFloat(1e-10);
+        
+        $this->assertEqualsWithDelta(1e-10, $smallNumber->getFloat(), 1e-15);
+        $this->assertFalse($smallNumber->isZero());
+    }
+
+    /**
+     * Test fromFloat with scientific notation - medium small numbers
+     */
+    public function testFromFloatScientificNotationMedium(): void
+    {
+        $number = RationalNumber::fromFloat(2.3e-5);
+        
+        $this->assertEqualsWithDelta(2.3e-5, $number->getFloat(), 1e-10);
+        $this->assertFalse($number->isZero());
+    }
+
+    /**
+     * Test fromFloat with scientific notation - large numbers
+     */
+    public function testFromFloatScientificNotationLarge(): void
+    {
+        $largeNumber = RationalNumber::fromFloat(1.5e10);
+        
+        $this->assertEqualsWithDelta(1.5e10, $largeNumber->getFloat(), 1e5);
+        $this->assertFalse($largeNumber->isZero());
+    }
+
+    /**
+     * Test fromFloat with extreme scientific notation that should overflow
+     */
+    public function testFromFloatExtremeScientificOverflow(): void
+    {
+        $this->expectException(\ArithmeticError::class);
+        $this->expectExceptionMessageMatches('/overflow/i');
+        
+        // This should cause overflow
+        RationalNumber::fromFloat(1e100);
+    }
+
+    /**
+     * Test fromFloat with zero in scientific notation
+     */
+    public function testFromFloatScientificNotationZero(): void
+    {
+        $zero = RationalNumber::fromFloat(0.0e10);
+        
+        $this->assertTrue($zero->isZero());
+        $this->assertEquals("0/1", $zero->toString());
+    }
+
+    /**
+     * Test fromFloat with negative scientific notation
+     */
+    public function testFromFloatScientificNotationNegative(): void
+    {
+        $negative = RationalNumber::fromFloat(-3.14e-8);
+        
+        $this->assertEqualsWithDelta(-3.14e-8, $negative->getFloat(), 1e-13);
+        $this->assertLessThan(0, $negative->getFloat());
+    }
+
+    /**
+     * Test that overflow error messages mention GMP when available
+     */
+    public function testOverflowErrorMessageIncludesGMPHint(): void
+    {
+        try {
+            $largeNum = new RationalNumber(PHP_INT_MAX, 2);
+            $largeNum->multiply($largeNum);
+            $this->fail('Expected ArithmeticError was not thrown');
+        } catch (\ArithmeticError $e) {
+            $message = $e->getMessage();
+            $this->assertStringContainsStringIgnoringCase('overflow', $message);
+            $this->assertStringContainsStringIgnoringCase('gmp', $message);
+        }
+    }
 }
