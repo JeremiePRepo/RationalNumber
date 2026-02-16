@@ -9,7 +9,12 @@ use RationalNumber\Contract\ArithmeticOperations;
 use RationalNumber\Contract\Comparable;
 use RationalNumber\Contract\NumericValue;
 
-final class RationalNumber implements ArithmeticOperations, Comparable, NumericValue
+/**
+ * Represents an immutable rational number (fraction) with precise arithmetic operations.
+ * 
+ * Implements JsonSerializable for seamless JSON encoding/decoding support.
+ */
+final class RationalNumber implements ArithmeticOperations, Comparable, NumericValue, \JsonSerializable
 {
     private int $numerator;
     private int $denominator;
@@ -222,10 +227,24 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
     }
 
     /**
-     * Divide another RationalNumber object by the current rational number.
-     * @param ArithmeticOperations $number The RationalNumber object to divide.
-     * @return RationalNumber The result of the division as a new RationalNumber object.
-     * @throws InvalidArgumentException if dividing by zero.
+     * Divide another RationalNumber object by the current rational number (inverse division).
+     * 
+     * This method performs the operation: $number / $this
+     * Equivalent to: $number->divideBy($this)
+     * 
+     * Useful for method chaining where you want to divide a value by the result of a calculation.
+     * 
+     * Example:
+     * <code>
+     * // Divide 100 by the result of a calculation
+     * $divisor = $a->add($b)->multiply($c);
+     * $result = $divisor->divideFrom(RationalNumber::fromFloat(100));
+     * // Instead of: RationalNumber::fromFloat(100)->divideBy($divisor)
+     * </code>
+     * 
+     * @param ArithmeticOperations $number The dividend (the number to be divided).
+     * @return RationalNumber The result of $number / $this as a new RationalNumber object.
+     * @throws InvalidArgumentException if the current instance is zero (division by zero).
      */
     public function divideFrom(ArithmeticOperations $number): RationalNumber
     {
@@ -448,6 +467,142 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
     }
 
     /**
+     * Raise the rational number to an integer power.
+     * 
+     * Supports positive, negative, and zero exponents.
+     * For negative exponents, calculates the power of the reciprocal.
+     * 
+     * @param int $exponent The integer exponent to raise to.
+     * @return RationalNumber The result of the exponentiation as a new RationalNumber object.
+     * @throws \ArithmeticError if the operation would cause integer overflow.
+     */
+    public function pow(int $exponent): RationalNumber
+    {
+        // Any number to the power of 0 is 1
+        if ($exponent === 0) {
+            return self::one();
+        }
+        
+        // Negative exponent: (a/b)^(-n) = (b/a)^n
+        if ($exponent < 0) {
+            return $this->reciprocal()->pow(-$exponent);
+        }
+        
+        // Positive exponent: multiply by itself (exponent - 1) times
+        $result = $this;
+        for ($i = 1; $i < $exponent; $i++) {
+            $result = $result->multiply($this);
+        }
+        
+        return $result;
+    }
+
+    /**
+     * Calculate the square root of the rational number using Newton-Raphson method.
+     * 
+     * Returns a rational approximation of the square root.
+     * The precision parameter controls the number of iterations (higher = more accurate).
+     * Note: Precision is limited to prevent overflow with very large fractions.
+     * 
+     * @param int $precision Number of iterations for the approximation (default: 10, max: 10).
+     * @return RationalNumber A rational approximation of the square root.
+     * @throws InvalidArgumentException if attempting to take square root of a negative number.
+     */
+    public function sqrt(int $precision = 10): RationalNumber
+    {
+        if ($this->numerator < 0) {
+            throw new InvalidArgumentException("Cannot calculate square root of a negative number.");
+        }
+        
+        if ($this->isZero()) {
+            return self::zero();
+        }
+        
+        // Limit precision to avoid overflow (max 10 iterations)
+        $precision = min($precision, 10);
+        
+        // Use float-based Newton-Raphson for stability
+        $floatSqrt = sqrt($this->getFloat());
+        $x = $floatSqrt;
+        $thisFloat = $this->getFloat();
+        
+        // Perform Newton-Raphson iterations in float space
+        for ($i = 0; $i < $precision; $i++) {
+            $x = ($x + $thisFloat / $x) / 2;
+        }
+        
+        // Convert final result to RationalNumber
+        return RationalNumber::fromFloat($x);
+    }
+
+    /**
+     * Return the minimum of this rational number and another.
+     * 
+     * @param RationalNumber $other The rational number to compare with.
+     * @return RationalNumber The smaller of the two rational numbers.
+     */
+    public function min(RationalNumber $other): RationalNumber
+    {
+        return $this->isLessThan($other) ? $this : $other;
+    }
+
+    /**
+     * Return the maximum of this rational number and another.
+     * 
+     * @param RationalNumber $other The rational number to compare with.
+     * @return RationalNumber The larger of the two rational numbers.
+     */
+    public function max(RationalNumber $other): RationalNumber
+    {
+        return $this->isGreaterThan($other) ? $this : $other;
+    }
+
+    /**
+     * Round the rational number to a specified denominator.
+     * 
+     * Rounds to the nearest rational number with the given denominator.
+     * Useful for rounding prices to cents (denominator = 100).
+     * 
+     * @param int $denominator The target denominator (default: 1 for integer rounding).
+     * @return RationalNumber The rounded rational number.
+     * @throws InvalidArgumentException if denominator is less than or equal to zero.
+     */
+    public function round(int $denominator = 1): RationalNumber
+    {
+        if ($denominator <= 0) {
+            throw new InvalidArgumentException("Denominator must be greater than zero.");
+        }
+        
+        $numerator = (int) round(
+            $this->numerator * $denominator / $this->denominator
+        );
+        
+        return new self($numerator, $denominator);
+    }
+
+    /**
+     * Round down to the nearest integer (floor function).
+     * 
+     * @return RationalNumber The largest integer less than or equal to this number.
+     */
+    public function floor(): RationalNumber
+    {
+        $integerPart = (int) floor($this->getFloat());
+        return new self($integerPart, 1);
+    }
+
+    /**
+     * Round up to the nearest integer (ceiling function).
+     * 
+     * @return RationalNumber The smallest integer greater than or equal to this number.
+     */
+    public function ceil(): RationalNumber
+    {
+        $integerPart = (int) ceil($this->getFloat());
+        return new self($integerPart, 1);
+    }
+
+    /**
      * Reduce the rational number to its simplest form.
      * @return RationalNumber The reduced rational number as a new RationalNumber object.
      */
@@ -493,6 +648,94 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
     public function __toString(): string
     {
         return $this->toString();
+    }
+
+    /**
+     * Serialize the rational number for JSON encoding.
+     * 
+     * Returns an array containing the numerator, denominator, and convenient representations.
+     * Automatically called by json_encode().
+     * 
+     * @return array{numerator: int, denominator: int, float: float, string: string} The serialized representation.
+     */
+    public function jsonSerialize(): array
+    {
+        return [
+            'numerator' => $this->numerator,
+            'denominator' => $this->denominator,
+            'float' => $this->getFloat(),
+            'string' => $this->toString()
+        ];
+    }
+
+    /**
+     * Export the rational number to an array (minimal format).
+     * 
+     * Returns only the essential numerator and denominator for storage.
+     * Useful for caching or database storage.
+     * 
+     * @return array{numerator: int, denominator: int} Array with numerator and denominator.
+     */
+    public function toArray(): array
+    {
+        return [
+            'numerator' => $this->numerator,
+            'denominator' => $this->denominator
+        ];
+    }
+
+    /**
+     * Create a RationalNumber from an array representation.
+     * 
+     * Expects an array with 'numerator' and 'denominator' keys.
+     * 
+     * @param array $data Array containing 'numerator' and 'denominator' keys.
+     * @return RationalNumber The reconstructed RationalNumber object.
+     * @throws InvalidArgumentException if required keys are missing or invalid.
+     */
+    public static function fromArray(array $data): RationalNumber
+    {
+        if (!isset($data['numerator']) || !isset($data['denominator'])) {
+            throw new InvalidArgumentException(
+                "Array must contain 'numerator' and 'denominator' keys."
+            );
+        }
+        
+        if (!is_int($data['numerator']) && !is_numeric($data['numerator'])) {
+            throw new InvalidArgumentException("Numerator must be an integer or numeric value.");
+        }
+        
+        if (!is_int($data['denominator']) && !is_numeric($data['denominator'])) {
+            throw new InvalidArgumentException("Denominator must be an integer or numeric value.");
+        }
+        
+        return new self((int)$data['numerator'], (int)$data['denominator']);
+    }
+
+    /**
+     * Create a RationalNumber from a JSON string.
+     * 
+     * Parses JSON and extracts numerator and denominator.
+     * 
+     * @param string $json JSON string containing rational number data.
+     * @return RationalNumber The reconstructed RationalNumber object.
+     * @throws InvalidArgumentException if JSON is invalid or required keys are missing.
+     */
+    public static function fromJson(string $json): RationalNumber
+    {
+        $data = json_decode($json, true);
+        
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new InvalidArgumentException(
+                "Invalid JSON: " . json_last_error_msg()
+            );
+        }
+        
+        if (!is_array($data)) {
+            throw new InvalidArgumentException("JSON must decode to an array.");
+        }
+        
+        return self::fromArray($data);
     }
 
     /**

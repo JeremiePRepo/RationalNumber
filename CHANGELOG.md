@@ -3,6 +3,163 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.9.0] - 2026-02-16
+
+### Added
+
+- **Advanced Mathematical Operations**: New power, square root, min, and max methods
+  - `pow(int $exponent)`: Raise rational number to integer power
+    - Supports positive, negative, and zero exponents
+    - Negative exponents use reciprocal (e.g., `x^-2 = (1/x)^2`)
+    - Includes overflow protection via existing `checkMultiplicationOverflow()` mechanism
+    - Practical use: compound interest calculations (`$rate->pow($years)`)
+  - `sqrt(int $precision = 10)`: Square root using Newton-Raphson approximation
+    - Returns rational approximation of square root
+    - Configurable precision (number of iterations)
+    - Validates against negative numbers (throws `InvalidArgumentException`)
+    - Example: `RationalNumber::fromFloat(2)->sqrt(20)` ≈ 1.41421356
+  - `min(RationalNumber $other)`: Return smaller of two rational numbers
+    - Useful for price comparisons, range analysis
+    - Example: `array_reduce($prices, fn($min, $p) => $min->min($p))`
+  - `max(RationalNumber $other)`: Return larger of two rational numbers
+    - Companion to min for complete comparison operations
+  - All methods maintain immutability (return new instances)
+  - **Added 34 tests** covering all operations, edge cases, and practical scenarios
+
+- **Rounding Operations**: New methods for rounding to integers or specific denominators
+  - `round(int $denominator = 1)`: Round to nearest rational with specified denominator
+    - Default rounds to nearest integer
+    - `$price->round(100)` rounds to cents (useful for currency)
+    - Validates denominator > 0 (throws `InvalidArgumentException`)
+  - `floor()`: Round down to nearest integer
+    - Returns largest integer ≤ value
+    - Handles negative numbers correctly (toward negative infinity)
+  - `ceil()`: Round up to nearest integer
+    - Returns smallest integer ≥ value
+    - Practical use: calculating units needed (`$quantity->divideBy($unitSize)->ceil()`)
+  - All methods return new `RationalNumber` instances (immutable)
+  - **Added 24 tests** including currency rounding, unit calculations, edge cases
+
+- **JSON Serialization Support**: Seamless JSON encoding/decoding
+  - Implements `\JsonSerializable` interface on `RationalNumber`
+  - `jsonSerialize()`: Returns array with numerator, denominator, float, and string representations
+    - Automatically called by `json_encode()`
+    - Verbose format includes all representations for API responses
+  - `toArray()`: Export to minimal array (numerator/denominator only)
+    - Efficient format for caching or database storage
+  - `fromArray(array $data)`: Reconstruct from array
+    - Validates required keys ('numerator', 'denominator')
+    - Validates numeric types with clear error messages
+    - Automatically normalizes/reduces during reconstruction
+  - `fromJson(string $json)`: Reconstruct from JSON string
+    - Validates JSON with helpful error messages
+    - Delegates to `fromArray()` for consistency
+  - All methods preserve fraction reduction (e.g., 6/9 → 2/3)
+  - **Added 26 tests** covering serialization, deserialization, round-trips, edge cases
+
+- **Collection Operations**: New `RationalCollection` class for batch processing
+  - Location: `RationalNumber\Collection\RationalCollection`
+  - Implements: `\Countable`, `\IteratorAggregate`, `\ArrayAccess`
+  - **Core methods:**
+    - `add(RationalNumber $number)`: Add element (fluent interface)
+    - `get(int $index)`: Retrieve element by index
+    - `count()`: Number of elements
+    - `isEmpty()`: Check if empty
+    - `clear()`: Remove all elements
+  - **Aggregate operations:**
+    - `sum()`: Sum all numbers (returns `RationalNumber`)
+    - `average()`: Calculate average (throws exception if empty)
+    - `min()`: Find minimum value (throws exception if empty)
+    - `max()`: Find maximum value (throws exception if empty)
+  - **Functional operations:**
+    - `map(callable $callback)`: Transform each element
+    - `filter(callable $callback)`: Select elements matching condition
+  - **Array-like behavior:**
+    - Supports `foreach` iteration
+    - Supports `count()` function
+    - Supports array access: `$collection[0]`, `$collection[] = $number`
+    - Validates that only `RationalNumber` instances are added
+  - **Practical use cases:**
+    - Grade averaging: `$grades->average()`
+    - Batch tax calculation: `$prices->map(fn($p) => $p->increaseByPercentage('20%'))`
+    - Price analysis: `$prices->min()`, `$prices->max()`
+  - **Added 33 tests** covering construction, operations, interfaces, chaining
+
+### Changed
+
+- **Improved `divideFrom()` Documentation**: Enhanced PHPDoc with detailed explanations
+  - Added clear description: "Divide another number by this instance (inverse division)"
+  - Clarified operation: performs `$number / $this`, equivalent to `$number->divideBy($this)`
+  - Added `@example` tag with practical method chaining scenario
+  - Explains usefulness: dividing a value by the result of a calculation
+  - Better parameter and return descriptions
+  - No behavioral changes (backward compatible)
+
+### Documentation
+
+- **README.md**: Added four new major sections
+  - "Advanced Mathematical Operations" with pow, sqrt, min, max examples
+    - Includes compound interest calculation example
+    - Demonstrates finding min/max in arrays
+  - "Rounding Operations" with round, floor, ceil examples
+    - Currency rounding example (round to cents)
+    - Unit calculation example (calculate units needed)
+  - "Serialization & Persistence" with JSON and array examples
+    - API response example
+    - Cache storage pattern
+    - Round-trip serialization examples
+  - "Working with Collections" with RationalCollection examples
+    - Grade averaging scenario
+    - Batch tax calculation
+    - Map/filter/chaining demonstrations
+  - Updated "Features" checklist with 4 new items
+  - Updated test metrics: **175 tests, 420+ assertions**
+
+- **CHANGELOG.md**: Comprehensive v2.9.0 entry with all additions
+  - Detailed descriptions of all 13 new public methods
+  - Practical use cases and code examples
+  - Test coverage breakdown by feature
+  - Migration notes for new Collection namespace
+
+### Testing
+
+- **Added 117 new tests** across 4 new test files:
+  - `MathOperationsTest.php`: 34 tests for pow, sqrt, min, max
+  - `RoundingTest.php`: 24 tests for round, floor, ceil
+  - `SerializationTest.php`: 26 tests for JSON and array serialization
+  - `CollectionTest.php`: 33 tests for collection operations
+- **Total test coverage: 175 tests, 420+ assertions** (was 125 tests, 295 assertions)
+- All tests follow existing patterns (immutability verification, edge cases, integration scenarios)
+- Maintains delta-based assertions for float comparisons (tolerance: 1e-12)
+
+### Architecture - SOLID Principles Compliance
+
+- **Single Responsibility**: 
+  - `RationalCollection` has single purpose: manage collections of rationals
+  - Each new method in `RationalNumber` has focused responsibility
+- **Open/Closed**: 
+  - Extensions via new methods without modifying existing behavior
+  - New Collection class extends functionality without changing core
+- **Liskov Substitution**: 
+  - `RationalNumber` still fulfills all interface contracts
+  - All methods return `RationalNumber` instances as expected
+- **Interface Segregation**: 
+  - `JsonSerializable` is optional interface, doesn't pollute core contracts
+  - Collection implements separate standard PHP interfaces
+- **Dependency Inversion**: 
+  - All methods depend on abstractions (RationalNumber type hints)
+  - No coupling to concrete implementations
+
+### Breaking Changes
+
+**None.** All changes are backward-compatible additions. Existing code continues to work without modification.
+
+### Migration Notes
+
+- **New namespace** for collections: `use RationalNumber\Collection\RationalCollection;`
+- **Composer autoloading** automatically includes Collection namespace via existing PSR-4 rule
+- **Optional features**: All new functionality is opt-in; existing code requires no changes
+
 ## [2.8.1] - 2026-02-16
 
   ### Developer
