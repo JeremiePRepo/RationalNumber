@@ -85,15 +85,13 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
      */
     public function sum(): RationalNumber
     {
-        if (empty($this->numbers)) {
-            return RationalNumber::zero();
+        $sum = RationalNumber::zero();
+
+        foreach ($this->numbers as $n) {
+            $sum = $sum->add($n);
         }
-        
-        return array_reduce(
-            $this->numbers,
-            fn($sum, $n) => $sum->add($n),
-            RationalNumber::zero()
-        );
+
+        return $sum;
     }
 
     /**
@@ -156,9 +154,17 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
      * @param callable $callback Function that takes a RationalNumber and returns a RationalNumber.
      * @return self A new RationalCollection with the mapped values.
      */
+    /**
+     * @param callable(RationalNumber): RationalNumber $callback
+     * @return self
+     */
     public function map(callable $callback): self
     {
-        return new self(array_map($callback, $this->numbers));
+        $mapped = array_map($callback, $this->numbers);
+        /** @var RationalNumber[] $mapped */
+        $mapped = array_values($mapped);
+
+        return new self($mapped);
     }
 
     /**
@@ -167,9 +173,17 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
      * @param callable $callback Function that takes a RationalNumber and returns a boolean.
      * @return self A new RationalCollection containing only elements where callback returned true.
      */
+    /**
+     * @param callable(RationalNumber): bool $callback
+     * @return self
+     */
     public function filter(callable $callback): self
     {
-        return new self(array_filter($this->numbers, $callback));
+        $filtered = array_filter($this->numbers, $callback);
+        /** @var RationalNumber[] $filtered */
+        $filtered = array_values($filtered);
+
+        return new self($filtered);
     }
 
     /**
@@ -239,6 +253,10 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
      */
     public function offsetExists(mixed $offset): bool
     {
+        if (!is_int($offset) && !is_string($offset)) {
+            return false;
+        }
+
         return isset($this->numbers[$offset]);
     }
 
@@ -250,6 +268,10 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
      */
     public function offsetGet(mixed $offset): ?RationalNumber
     {
+        if (!is_int($offset) && !is_string($offset)) {
+            return null;
+        }
+
         return $this->numbers[$offset] ?? null;
     }
 
@@ -268,9 +290,14 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
         
         if ($offset === null) {
             $this->numbers[] = $value;
-        } else {
-            $this->numbers[$offset] = $value;
+            return;
         }
+
+        if (!is_int($offset) && !is_string($offset)) {
+            throw new InvalidArgumentException('Offset must be an integer or string.');
+        }
+
+        $this->numbers[$offset] = $value;
     }
 
     /**
@@ -280,6 +307,10 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
      */
     public function offsetUnset(mixed $offset): void
     {
+        if (!is_int($offset) && !is_string($offset)) {
+            return;
+        }
+
         unset($this->numbers[$offset]);
     }
 }
