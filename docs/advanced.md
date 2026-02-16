@@ -34,6 +34,8 @@ echo $final->getFloat();  // ≈ 1628.89
 
 ### Square Root
 
+The square root is computed using an iterative approximation method (Newton's method). The result is a rational approximation and may grow significantly in numerator/denominator size depending on the number of iterations.
+
 ```php
 use RationalNumber\RationalNumber;
 
@@ -46,6 +48,9 @@ echo $sqrt->getFloat();  // 2.0
 $two = RationalNumber::fromFloat(2);
 $sqrt2 = $two->sqrt(20);  // 20 iterations
 echo $sqrt2->getFloat();  // ≈ 1.41421356
+
+// Warning: High iteration counts can produce very large numerators/denominators
+// Use with caution for non-perfect squares
 ```
 
 ### Min and Max Operations
@@ -70,13 +75,15 @@ $prices = [
     RationalNumber::fromFloat(12.00)
 ];
 
-$minPrice = array_reduce($prices, fn($min, $p) => $min->min($p), $prices[0]);
+$minPrice = array_reduce($prices, fn($currentMin, $p) => $currentMin->min($p), $prices[0]);
 echo $minPrice->getFloat();  // 8.75
 ```
 
 ## Rounding Operations
 
 ### Round to Nearest
+
+The `round()` method uses standard half-up rounding (rounds 0.5 away from zero).
 
 ```php
 use RationalNumber\RationalNumber;
@@ -145,6 +152,9 @@ try {
 
 **Key points:**
 - Overflow detection applies to `multiply()`, `add()`, `subtract()` operations
+- `pow()` can also trigger overflow, especially with large exponents
+- `sqrt()` may produce very large numerators/denominators that can overflow
+- Large intermediate values can overflow even if the final result would fit in memory
 - Throws `ArithmeticError` before the overflow occurs
 - Error messages suggest installing/using GMP extension for larger numbers
 - Detection happens during cross-multiplication in addition/subtraction
