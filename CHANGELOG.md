@@ -128,6 +128,15 @@ All notable changes to this project will be documented in this file.
 - **Tests updated:** Several floating-point assertions were replaced with delta-based assertions (`assertEqualsWithDelta`) to avoid platform-specific flakiness.
 - **Verification:** Ran the full test suite under PHP 8.0 — all tests pass (50 tests, 98 assertions). PHPUnit suggests migrating `phpunit.xml.dist` to the modern schema; consider running `vendor/bin/phpunit --migrate-configuration` to update the config.
 
+## [2.3.0] - 2026-02-16
+
+### Maintenance
+
+- **Bumped minimum PHP requirement to PHP 8.2.**
+- **Verification:** Ran the full test suite under PHP 8.2.29 — all tests pass (50 tests, 98 assertions).
+- **PHP 8.2 compatibility:** No dynamic properties used; code is fully compatible with PHP 8.2's stricter rules.
+- **Dev dependencies:** PHPUnit remains on `^9.5` (tested with 9.6). Consider migrating `phpunit.xml.dist` with `vendor/bin/phpunit --migrate-configuration` to use the latest schema.
+
 ## [2.2.0] - 2026-02-16
 
 ### Maintenance
