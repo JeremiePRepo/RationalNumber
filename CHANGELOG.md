@@ -1,15 +1,16 @@
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
 
-## [2.4.0] - 2026-02-16
+## [2.6.0] - 2026-02-16
 
-### Maintenance
+### Maintenance - Production Release Preparation
 
-- **Bumped minimum PHP requirement to PHP 8.3.**
-- **Verification:** Ran the full test suite under PHP 8.3.30 — all tests pass (50 tests, 98 assertions).
-- **PHP 8.3 compatibility:** No dynamic properties used; code is fully compatible with PHP 8.3's stricter rules.
-- **Dev dependencies:** PHPUnit remains on `^9.5` (tested with 9.6). Consider migrating `phpunit.xml.dist` with `vendor/bin/phpunit --migrate-configuration` to use the latest schema.
+- **Prepared for Packagist publication:** Set minimum PHP requirement to PHP 8.3 (current stable version).
+- **Verification:** Library tested and compatible with PHP 8.3, 8.4, and future 8.5.
+- **Production ready:** All tests pass (50 tests, 98 assertions) across PHP 8.3+ versions.
+- **Dev dependencies:** PHPUnit `^9.5` (tested with 9.6). Consider migrating `phpunit.xml.dist` with `vendor/bin/phpunit --migrate-configuration` to use the latest schema.
 
 ## [2.5.0] - 2026-02-16
 
@@ -20,14 +21,40 @@ All notable changes to this project will be documented in this file.
 - **PHP 8.4 compatibility:** No dynamic properties used; code is fully compatible with PHP 8.4's rules and deprecations.
 - **Dev dependencies:** PHPUnit remains on `^9.5` (tested with 9.6). Consider migrating `phpunit.xml.dist` with `vendor/bin/phpunit --migrate-configuration` to use the latest schema.
 
-## [2.6.0] - 2026-02-16
+## [2.4.0] - 2026-02-16
 
-### Maintenance - Production Release Preparation
+### Maintenance
 
-- **Prepared for Packagist publication:** Set minimum PHP requirement to PHP 8.3 (current stable version).
-- **Verification:** Library tested and compatible with PHP 8.3, 8.4, and future 8.5.
-- **Production ready:** All tests pass (50 tests, 98 assertions) across PHP 8.3+ versions.
-- **Dev dependencies:** PHPUnit `^9.5` (tested with 9.6). Consider migrating `phpunit.xml.dist` with `vendor/bin/phpunit --migrate-configuration` to use the latest schema.
+- **Bumped minimum PHP requirement to PHP 8.3.**
+- **Verification:** Ran the full test suite under PHP 8.3.30 — all tests pass (50 tests, 98 assertions).
+- **PHP 8.3 compatibility:** No dynamic properties used; code is fully compatible with PHP 8.3's stricter rules.
+- **Dev dependencies:** PHPUnit remains on `^9.5` (tested with 9.6). Consider migrating `phpunit.xml.dist` with `vendor/bin/phpunit --migrate-configuration` to use the latest schema.
+
+## [2.3.0] - 2026-02-16
+
+### Maintenance
+
+- **Bumped minimum PHP requirement to PHP 8.2.**
+- **Verification:** Ran the full test suite under PHP 8.2.29 — all tests pass (50 tests, 98 assertions).
+- **PHP 8.2 compatibility:** No dynamic properties used; code is fully compatible with PHP 8.2's stricter rules.
+- **Dev dependencies:** PHPUnit remains on `^9.5` (tested with 9.6). Consider migrating `phpunit.xml.dist` with `vendor/bin/phpunit --migrate-configuration` to use the latest schema.
+
+## [2.2.0] - 2026-02-16
+
+### Maintenance
+
+- **Bumped minimum PHP requirement to PHP 8.1.**
+- **Verification:** Ran the full test suite under PHP 8.1.31 — all tests pass (50 tests, 98 assertions).
+- **Dev dependencies:** PHPUnit remains on `^9.5` (tested with 9.6). Consider migrating `phpunit.xml.dist` with `vendor/bin/phpunit --migrate-configuration` to use the latest schema.
+
+## [2.1.0] - 2026-02-16
+
+### Maintenance
+
+- **Bumped minimum PHP requirement to PHP 8.0.** This repository now targets PHP 8.0+ for runtime.
+- **Updated dev dependencies:** PHPUnit moved to `^9.5` (PHPUnit 9.6 installed) to support PHP 8.0.
+- **Tests updated:** Several floating-point assertions were replaced with delta-based assertions (`assertEqualsWithDelta`) to avoid platform-specific flakiness.
+- **Verification:** Ran the full test suite under PHP 8.0 — all tests pass (50 tests, 98 assertions). PHPUnit suggests migrating `phpunit.xml.dist` to the modern schema; consider running `vendor/bin/phpunit --migrate-configuration` to update the config.
 
 ## [2.0.0] - 2026-02-15
 
@@ -64,7 +91,7 @@ All notable changes to this project will be documented in this file.
 
 #### Breaking Changes
 - **BREAKING**: Moved `RationalNumber` class to `src/` directory with proper PSR-4 namespace
-- **BREAKING**: Class now requires namespace: `use RationalNumber\RationalNumber;`
+- **BREAKING**: Class now requires namespace: `use RationalNumber\\RationalNumber;`
 - **BREAKING**: Minimum PHP version increased to 7.4 (was 7.0)
 - **BREAKING**: Class is now marked as `final` (value object best practice)
 - **BREAKING**: Arithmetic method signatures now accept interface types
@@ -146,28 +173,3 @@ All notable changes to this project will be documented in this file.
 - Float/integer conversions
 - Basic normalization
 
-## [2.1.0] - 2026-02-16
-
-### Maintenance
-
-- **Bumped minimum PHP requirement to PHP 8.0.** This repository now targets PHP 8.0+ for runtime.
-- **Updated dev dependencies:** PHPUnit moved to `^9.5` (PHPUnit 9.6 installed) to support PHP 8.0.
-- **Tests updated:** Several floating-point assertions were replaced with delta-based assertions (`assertEqualsWithDelta`) to avoid platform-specific flakiness.
-- **Verification:** Ran the full test suite under PHP 8.0 — all tests pass (50 tests, 98 assertions). PHPUnit suggests migrating `phpunit.xml.dist` to the modern schema; consider running `vendor/bin/phpunit --migrate-configuration` to update the config.
-
-## [2.3.0] - 2026-02-16
-
-### Maintenance
-
-- **Bumped minimum PHP requirement to PHP 8.2.**
-- **Verification:** Ran the full test suite under PHP 8.2.29 — all tests pass (50 tests, 98 assertions).
-- **PHP 8.2 compatibility:** No dynamic properties used; code is fully compatible with PHP 8.2's stricter rules.
-- **Dev dependencies:** PHPUnit remains on `^9.5` (tested with 9.6). Consider migrating `phpunit.xml.dist` with `vendor/bin/phpunit --migrate-configuration` to use the latest schema.
-
-## [2.2.0] - 2026-02-16
-
-### Maintenance
-
-- **Bumped minimum PHP requirement to PHP 8.1.**
-- **Verification:** Ran the full test suite under PHP 8.1.31 — all tests pass (50 tests, 98 assertions).
-- **Dev dependencies:** PHPUnit remains on `^9.5` (tested with 9.6). Consider migrating `phpunit.xml.dist` with `vendor/bin/phpunit --migrate-configuration` to use the latest schema.
