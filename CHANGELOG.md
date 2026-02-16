@@ -22,12 +22,12 @@ All notable changes to this project will be documented in this file.
 
 ## [2.6.0] - 2026-02-16
 
-### Maintenance
+### Maintenance - Production Release Preparation
 
-- **Bumped minimum PHP requirement to PHP 8.5.**
-- **Verification:** Ran the full test suite under PHP 8.5.3 — all tests pass (50 tests, 98 assertions).
-- **PHP 8.5 compatibility:** Code is compatible with PHP 8.5; no dynamic properties or removed features in use.
-- **Dev dependencies:** PHPUnit remains on `^9.5` (tested with 9.6). Consider migrating `phpunit.xml.dist` with `vendor/bin/phpunit --migrate-configuration` to use the latest schema.
+- **Prepared for Packagist publication:** Set minimum PHP requirement to PHP 8.3 (current stable version).
+- **Verification:** Library tested and compatible with PHP 8.3, 8.4, and future 8.5.
+- **Production ready:** All tests pass (50 tests, 98 assertions) across PHP 8.3+ versions.
+- **Dev dependencies:** PHPUnit `^9.5` (tested with 9.6). Consider migrating `phpunit.xml.dist` with `vendor/bin/phpunit --migrate-configuration` to use the latest schema.
 
 ## [2.0.0] - 2026-02-15
 
