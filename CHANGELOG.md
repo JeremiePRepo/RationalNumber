@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.8.0] - 2026-02-16
+
 ### Added
 
 - **String Parsing**: New `fromString()` static method for flexible RationalNumber creation
@@ -18,6 +20,7 @@ All notable changes to this project will be documented in this file.
   - Overflow protection for large numerators/denominators
   - Added to both `RationalNumber` class and `RationalNumberFactory`
   - **Added 19 comprehensive tests** covering all formats and edge cases
+  - **Total test coverage: 125 tests, 295 assertions** (was 106 tests, 241 assertions)
 
 ## [2.7.0] - 2026-02-16
 
