@@ -689,7 +689,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
      * 
      * Expects an array with 'numerator' and 'denominator' keys.
      * 
-     * @param array $data Array containing 'numerator' and 'denominator' keys.
+     * @param array<string, mixed> $data Array containing 'numerator' and 'denominator' keys.
      * @return RationalNumber The reconstructed RationalNumber object.
      * @throws InvalidArgumentException if required keys are missing or invalid.
      */

@@ -24,6 +24,9 @@ use RationalNumber\RationalNumber;
  * ]);
  * $average = $grades->average();
  * </code>
+ * 
+ * @implements \IteratorAggregate<int, RationalNumber>
+ * @implements \ArrayAccess<int, RationalNumber>
  */
 class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
 {
@@ -35,7 +38,7 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
     /**
      * Constructor for RationalCollection.
      * 
-     * @param array $numbers Optional array of RationalNumber instances to initialize with.
+     * @param array<RationalNumber> $numbers Optional array of RationalNumber instances to initialize with.
      * @throws InvalidArgumentException if any element is not a RationalNumber instance.
      */
     public function __construct(array $numbers = [])
@@ -123,7 +126,7 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
         
         return array_reduce(
             array_slice($this->numbers, 1),
-            fn($min, $n) => $n->isLessThan($min) ? $n : $min,
+            fn(RationalNumber $min, RationalNumber $n) => $n->isLessThan($min) ? $n : $min,
             $this->numbers[0]
         );
     }
@@ -142,7 +145,7 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
         
         return array_reduce(
             array_slice($this->numbers, 1),
-            fn($max, $n) => $n->isGreaterThan($max) ? $n : $max,
+            fn(RationalNumber $max, RationalNumber $n) => $n->isGreaterThan($max) ? $n : $max,
             $this->numbers[0]
         );
     }
@@ -219,7 +222,7 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
      * 
      * Allows foreach iteration over the collection.
      * 
-     * @return \ArrayIterator Iterator for the RationalNumber instances.
+     * @return \ArrayIterator<int, RationalNumber> Iterator for the RationalNumber instances.
      */
     public function getIterator(): \ArrayIterator
     {
