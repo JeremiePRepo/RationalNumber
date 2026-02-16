@@ -10,8 +10,8 @@ use RationalNumber\Factory\RationalNumberFactory;
 use InvalidArgumentException;
 
 /**
- * Tests spécifiques pour valider la compatibilité PHP 8.3
- * et les cas limites (overflow, précision float, grandes valeurs)
+ * Specific tests to validate PHP 8.3 compatibility
+ * and edge cases (overflow, float precision, large values)
  */
 class PHP83EdgeCasesTest extends TestCase
 {
@@ -23,7 +23,7 @@ class PHP83EdgeCasesTest extends TestCase
     }
 
     /**
-     * Test avec de très grands nombres proches de PHP_INT_MAX
+     * Test with very large numbers close to PHP_INT_MAX
      */
     public function testLargeNumeratorValues(): void
     {
@@ -36,7 +36,7 @@ class PHP83EdgeCasesTest extends TestCase
     }
 
     /**
-     * Test avec de très grands dénominateurs
+     * Test with very large denominators
      */
     public function testLargeDenominatorValues(): void
     {
@@ -49,11 +49,11 @@ class PHP83EdgeCasesTest extends TestCase
     }
 
     /**
-     * Test addition avec de très grands nombres
+     * Test addition with very large numbers
      */
     public function testAdditionWithLargeNumbers(): void
     {
-        // Utiliser des nombres suffisamment grands mais qui ne causeront pas d'overflow lors de l'addition
+        // Use numbers large enough but that won't cause overflow during addition
         $num1 = new RationalNumber(1000000000, 1);
         $num2 = new RationalNumber(2000000000, 1);
         $result = $num1->add($num2);
@@ -63,11 +63,11 @@ class PHP83EdgeCasesTest extends TestCase
     }
 
     /**
-     * Test multiplication avec de grands nombres (risque d'overflow)
+     * Test multiplication with large numbers (risk of overflow)
      */
     public function testMultiplicationWithLargeNumbers(): void
     {
-        // Nombres qui ne causeront pas d'overflow au numérateur/dénominateur
+        // Numbers that won't cause overflow in numerator/denominator
         $num1 = new RationalNumber(1000000, 1);
         $num2 = new RationalNumber(1000000, 1);
         $result = $num1->multiply($num2);
@@ -77,26 +77,26 @@ class PHP83EdgeCasesTest extends TestCase
     }
 
     /**
-     * Test conversion float avec précision limite
+     * Test float conversion with precision limits
      */
     public function testFloatPrecisionEdgeCases(): void
     {
-        // Test avec un float qui a beaucoup de décimales
+        // Test with a float that has many decimal places
         $preciseFloat = 0.123456789012345;
         $number = $this->factory->fromFloat($preciseFloat);
         
-        // Vérifier que la conversion est raisonnablement précise
+        // Verify that the conversion is reasonably accurate
         $this->assertEqualsWithDelta($preciseFloat, $number->getFloat(), 1e-10);
     }
 
     /**
-     * Test conversion float avec valeurs très petites
-     * Note: fromFloat a des limites de précision avec les très petits nombres
-     * en raison de la conversion string->int dans l'implémentation
+     * Test float conversion with very small values
+     * Note: fromFloat has precision limits with very small numbers
+     * due to string->int conversion in the implementation
      */
     public function testVerySmallFloatValues(): void
     {
-        $verySmall = 0.001; // Utiliser une valeur plus raisonnable
+        $verySmall = 0.001; // Use a more reasonable value
         $number = $this->factory->fromFloat($verySmall);
         
         $this->assertEqualsWithDelta($verySmall, $number->getFloat(), 1e-10);
@@ -105,7 +105,7 @@ class PHP83EdgeCasesTest extends TestCase
     }
 
     /**
-     * Test conversion float avec valeurs très grandes
+     * Test float conversion with very large values
      */
     public function testVeryLargeFloatValues(): void
     {
@@ -117,7 +117,7 @@ class PHP83EdgeCasesTest extends TestCase
     }
 
     /**
-     * Test normalisation avec de grands nombres négatifs
+     * Test normalization with large negative numbers
      */
     public function testNormalizationWithLargeNegativeNumbers(): void
     {
@@ -128,41 +128,41 @@ class PHP83EdgeCasesTest extends TestCase
     }
 
     /**
-     * Test avec nombres négatifs au dénominateur (grande valeur)
+     * Test with negative numbers in denominator (large value)
      */
     public function testNegativeLargeDenominator(): void
     {
         $number = new RationalNumber(1000000, -1000);
         
-        // Devrait être normalisé en négatif au numérateur
+        // Should be normalized with negative in numerator
         $this->assertEquals("-1000/1", $number->toString());
         $this->assertEquals(-1000.0, $number->getFloat());
     }
 
     /**
-     * Test chaînage d'opérations multiples (immutabilité)
+     * Test chaining multiple operations (immutability)
      */
     public function testMethodChaining(): void
     {
         $number = new RationalNumber(10, 1);
         
-        // Chaîner plusieurs opérations
+        // Chain multiple operations
         $result = $number
             ->add(new RationalNumber(5, 1))
             ->multiply(new RationalNumber(2, 1))
             ->subtract(new RationalNumber(10, 1))
             ->divideBy(new RationalNumber(2, 1));
         
-        // (10 + 5) * 2 - 10 = 30 - 10 = 20, puis 20 / 2 = 10
+        // (10 + 5) * 2 - 10 = 30 - 10 = 20, then 20 / 2 = 10
         $this->assertEquals("10/1", $result->toString());
         $this->assertEquals(10.0, $result->getFloat());
         
-        // Vérifier que l'original n'a pas changé (immutabilité)
+        // Verify that the original hasn't changed (immutability)
         $this->assertEquals("10/1", $number->toString());
     }
 
     /**
-     * Test chaînage complexe avec nombres fractionnaires
+     * Test complex chaining with fractional numbers
      */
     public function testComplexMethodChaining(): void
     {
@@ -180,7 +180,7 @@ class PHP83EdgeCasesTest extends TestCase
     }
 
     /**
-     * Test opérations avec zéro
+     * Test operations with zero
      */
     public function testZeroOperations(): void
     {
@@ -197,7 +197,7 @@ class PHP83EdgeCasesTest extends TestCase
     }
 
     /**
-     * Test opérations avec un (élément neutre)
+     * Test operations with one (identity element)
      */
     public function testOneOperations(): void
     {
@@ -210,11 +210,11 @@ class PHP83EdgeCasesTest extends TestCase
     }
 
     /**
-     * Test réduction automatique avec grands nombres
+     * Test automatic reduction with large numbers
      */
     public function testAutoReductionWithLargeNumbers(): void
     {
-        // 1000000/2000000 devrait se réduire à 1/2
+        // 1000000/2000000 should reduce to 1/2
         $number = new RationalNumber(1000000, 2000000);
         
         $this->assertEquals("1/2", $number->toString());
@@ -222,11 +222,11 @@ class PHP83EdgeCasesTest extends TestCase
     }
 
     /**
-     * Test reduction avec PGCD de grands nombres
+     * Test reduction with GCD of large numbers
      */
     public function testGCDWithLargeNumbers(): void
     {
-        // 999999/333333 = 3/1 (PGCD = 333333)
+        // 999999/333333 = 3/1 (GCD = 333333)
         $number = new RationalNumber(999999, 333333);
         
         $this->assertEquals("3/1", $number->toString());
@@ -235,7 +235,7 @@ class PHP83EdgeCasesTest extends TestCase
     }
 
     /**
-     * Test comparaisons avec nombres très proches
+     * Test comparisons with very close numbers
      */
     public function testComparisonWithVeryCloseNumbers(): void
     {
@@ -248,7 +248,7 @@ class PHP83EdgeCasesTest extends TestCase
     }
 
     /**
-     * Test valeur absolue avec grands nombres négatifs
+     * Test absolute value with large negative numbers
      */
     public function testAbsWithLargeNegativeNumbers(): void
     {
@@ -258,12 +258,12 @@ class PHP83EdgeCasesTest extends TestCase
         $this->assertEquals("1000000000/1", $abs->toString());
         $this->assertEquals(1000000000.0, $abs->getFloat());
         
-        // Original ne change pas
+        // Original doesn't change
         $this->assertEquals("-1000000000/1", $number->toString());
     }
 
     /**
-     * Test négation multiple (double négation)
+     * Test multiple negation (double negation)
      */
     public function testDoubleNegation(): void
     {
@@ -277,20 +277,20 @@ class PHP83EdgeCasesTest extends TestCase
     }
 
     /**
-     * Test type safety avec strict_types=1
+     * Test type safety with strict_types=1
      */
     public function testStrictTypesEnforcement(): void
     {
-        // Ce test vérifie que strict_types est bien activé
-        // En PHP 8.3 avec strict_types=1, passer une string devrait lever une TypeError
+        // This test verifies that strict_types is properly enabled
+        // In PHP 8.3 with strict_types=1, passing a string should raise a TypeError
         $this->expectException(\TypeError::class);
         
-        // @phpstan-ignore-next-line - On teste volontairement un mauvais type
+        // @phpstan-ignore-next-line - We deliberately test a wrong type
         new RationalNumber("5", 1);
     }
 
     /**
-     * Test toString avec nombres réduits
+     * Test toString with reduced numbers
      */
     public function testToStringWithReducedFractions(): void
     {
@@ -311,8 +311,8 @@ class PHP83EdgeCasesTest extends TestCase
     }
 
     /**
-     * Test conversion pourcentage avec valeurs extrêmes
-     * Note: toPercentage() utilise number_format() qui ajoute des séparateurs de milliers
+     * Test percentage conversion with extreme values
+     * Note: toPercentage() uses number_format() which adds thousands separators
      */
     public function testPercentageWithExtremeValues(): void
     {
@@ -320,12 +320,12 @@ class PHP83EdgeCasesTest extends TestCase
         $this->assertEquals("0.01%", $verySmall->toPercentage(2));
         
         $veryLarge = new RationalNumber(10000, 1);
-        // number_format ajoute des séparateurs de milliers pour les grands nombres
+        // number_format adds thousands separators for large numbers
         $this->assertEquals("1,000,000.00%", $veryLarge->toPercentage(2));
     }
 
     /**
-     * Test compareTo retourne les bonnes valeurs (-1, 0, 1)
+     * Test compareTo returns the correct values (-1, 0, 1)
      */
     public function testCompareToReturnValues(): void
     {
@@ -339,7 +339,7 @@ class PHP83EdgeCasesTest extends TestCase
     }
 
     /**
-     * Test factory fromFloat avec zéro
+     * Test factory fromFloat with zero
      */
     public function testFactoryFromFloatZero(): void
     {
@@ -350,7 +350,7 @@ class PHP83EdgeCasesTest extends TestCase
     }
 
     /**
-     * Test factory fromFloat avec float négatif
+     * Test factory fromFloat with negative float
      */
     public function testFactoryFromFloatNegative(): void
     {
@@ -361,13 +361,13 @@ class PHP83EdgeCasesTest extends TestCase
     }
 
     /**
-     * Test isInteger avec différentes fractions
+     * Test isInteger with different fractions
      */
     public function testIsIntegerVariousCases(): void
     {
         $this->assertTrue((new RationalNumber(10, 1))->isInteger());
-        $this->assertTrue((new RationalNumber(10, 2))->isInteger()); // Réduit à 5/1
-        $this->assertTrue((new RationalNumber(15, 3))->isInteger()); // Réduit à 5/1
+        $this->assertTrue((new RationalNumber(10, 2))->isInteger()); // Reduces to 5/1
+        $this->assertTrue((new RationalNumber(15, 3))->isInteger()); // Reduces to 5/1
         $this->assertFalse((new RationalNumber(3, 2))->isInteger());
         $this->assertFalse((new RationalNumber(7, 4))->isInteger());
         $this->assertTrue((new RationalNumber(0, 1))->isInteger());

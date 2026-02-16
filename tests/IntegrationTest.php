@@ -10,8 +10,8 @@ use RationalNumber\Calculator\PercentageCalculator;
 use RationalNumber\Factory\RationalNumberFactory;
 
 /**
- * Tests d'intégration combinant Factory, Calculator et RationalNumber
- * pour valider les interactions entre composants
+ * Integration tests combining Factory, Calculator and RationalNumber
+ * to validate interactions between components
  */
 class IntegrationTest extends TestCase
 {
@@ -25,21 +25,21 @@ class IntegrationTest extends TestCase
     }
 
     /**
-     * Scénario complet: création via factory, calculs, puis conversion pourcentage
+     * Complete scenario: creation via factory, calculations, then percentage conversion
      */
     public function testCompleteWorkflow(): void
     {
-        // Créer un nombre via factory
+        // Create a number via factory
         $price = $this->factory->fromFloat(100.0);
         
-        // Appliquer une remise de 20% via calculator
+        // Apply a 20% discount via calculator
         $discount = $this->calculator->decreaseBy($price, "20%");
         
-        // Vérifier le résultat
+        // Verify the result
         $this->assertEquals(80.0, $discount->getFloat());
         $this->assertEquals("80/1", $discount->toString());
         
-        // Ajouter une taxe de 10%
+        // Add a 10% tax
         $withTax = $this->calculator->increaseBy($discount, "10%");
         
         // 80 + 10% = 88
@@ -47,59 +47,59 @@ class IntegrationTest extends TestCase
     }
 
     /**
-     * Scénario: calcul de pourcentage d'économie
+     * Scenario: savings percentage calculation
      */
     public function testSavingsCalculation(): void
     {
         $originalPrice = $this->factory->fromFloat(150.0);
         $salePrice = $this->factory->fromFloat(120.0);
         
-        // Calculer l'économie
+        // Calculate savings
         $savings = $originalPrice->subtract($salePrice);
         $this->assertEquals(30.0, $savings->getFloat());
         
-        // Calculer le pourcentage d'économie
+        // Calculate the savings percentage
         $savingsPercent = $this->calculator->percentageOf($savings, $originalPrice);
         $this->assertEquals("20.00%", $savingsPercent);
     }
 
     /**
-     * Scénario: calcul d'intérêts composés (simplifié)
+     * Scenario: compound interest calculation (simplified)
      */
     public function testCompoundInterest(): void
     {
-        // Capital initial
+        // Initial principal
         $principal = $this->factory->fromFloat(1000.0);
         
-        // Taux d'intérêt annuel: 5%
+        // Annual interest rate: 5%
         $rate = "5%";
         
-        // Après 1 an
+        // After 1 year
         $year1 = $this->calculator->increaseBy($principal, $rate);
         $this->assertEquals(1050.0, $year1->getFloat());
         
-        // Après 2 ans
+        // After 2 years
         $year2 = $this->calculator->increaseBy($year1, $rate);
         $this->assertEqualsWithDelta(1102.5, $year2->getFloat(), 0.01);
         
-        // Après 3 ans
+        // After 3 years
         $year3 = $this->calculator->increaseBy($year2, $rate);
         $this->assertEqualsWithDelta(1157.625, $year3->getFloat(), 0.01);
     }
 
     /**
-     * Scénario: partage de facture entre plusieurs personnes
+     * Scenario: splitting a bill among multiple people
      */
     public function testBillSplitting(): void
     {
-        // Facture totale
+        // Total bill
         $totalBill = $this->factory->fromFloat(150.75);
         
-        // Pourboire de 15%
+        // 15% tip
         $tip = $this->calculator->increaseBy($totalBill, "15%");
         $this->assertEqualsWithDelta(173.3625, $tip->getFloat(), 0.01);
         
-        // Diviser entre 4 personnes
+        // Divide among 4 people
         $fourPeople = $this->factory->create(4, 1);
         $perPerson = $tip->divideBy($fourPeople);
         
@@ -107,14 +107,14 @@ class IntegrationTest extends TestCase
     }
 
     /**
-     * Scénario: conversion de recette (proportions)
+     * Scenario: recipe conversion (proportions)
      */
     public function testRecipeScaling(): void
     {
-        // Recette originale pour 4 personnes: 2/3 tasse de farine
+        // Original recipe for 4 people: 2/3 cup of flour
         $originalFlour = $this->factory->create(2, 3);
         
-        // Adapter pour 6 personnes (facteur 1.5)
+        // Scale for 6 people (factor 1.5)
         $scaleFactor = $this->factory->create(3, 2);
         $scaledFlour = $originalFlour->multiply($scaleFactor);
         
@@ -125,20 +125,20 @@ class IntegrationTest extends TestCase
     }
 
     /**
-     * Scénario: calcul de moyenne pondérée
+     * Scenario: weighted average calculation
      */
     public function testWeightedAverage(): void
     {
-        // Notes avec poids
-        // Note 1: 85/100 avec poids 30%
+        // Grades with weights
+        // Grade 1: 85/100 with 30% weight
         $note1 = $this->factory->create(85, 100);
         $weight1 = $this->factory->fromPercentage("30%");
         
-        // Note 2: 90/100 avec poids 70%
+        // Grade 2: 90/100 with 70% weight
         $note2 = $this->factory->create(90, 100);
         $weight2 = $this->factory->fromPercentage("70%");
         
-        // Moyenne pondérée
+        // Weighted average
         $weighted1 = $note1->multiply($weight1);
         $weighted2 = $note2->multiply($weight2);
         $average = $weighted1->add($weighted2);
@@ -149,19 +149,19 @@ class IntegrationTest extends TestCase
     }
 
     /**
-     * Scénario: comparaison de produits avec remises différentes
+     * Scenario: comparing products with different discounts
      */
     public function testProductComparison(): void
     {
-        // Produit A: 100€ avec 20% de remise
+        // Product A: 100€ with 20% discount
         $productA = $this->factory->fromFloat(100.0);
         $priceA = $this->calculator->decreaseBy($productA, "20%");
         
-        // Produit B: 90€ avec 10% de remise
+        // Product B: 90€ with 10% discount
         $productB = $this->factory->fromFloat(90.0);
         $priceB = $this->calculator->decreaseBy($productB, "10%");
         
-        // Comparer les prix finaux
+        // Compare final prices
         $this->assertEquals(80.0, $priceA->getFloat());
         $this->assertEquals(81.0, $priceB->getFloat());
         
@@ -170,47 +170,47 @@ class IntegrationTest extends TestCase
     }
 
     /**
-     * Scénario: conversion entre formats différents
+     * Scenario: conversion between different formats
      */
     public function testFormatConversions(): void
     {
-        // Partir d'un float
+        // Start from a float
         $value = $this->factory->fromFloat(0.375);
         
-        // Convertir en pourcentage
+        // Convert to percentage
         $percentage = $this->calculator->toPercentage($value, 1);
         $this->assertEquals("37.5%", $percentage);
         
-        // Reconvertir du pourcentage
+        // Convert back from percentage
         $backToRational = $this->factory->fromPercentage($percentage);
         
-        // Vérifier qu'on retrouve la valeur originale
+        // Verify we get back the original value
         $this->assertEqualsWithDelta($value->getFloat(), $backToRational->getFloat(), 0.001);
     }
 
     /**
-     * Scénario: calculs en cascade avec factory methods
+     * Scenario: cascading calculations with factory methods
      */
     public function testCascadingCalculations(): void
     {
-        // Partir de zéro
+        // Start from zero
         $result = $this->factory->zero();
         
-        // Ajouter des valeurs
+        // Add values
         $result = $result->add($this->factory->fromFloat(10.5));
         $result = $result->add($this->factory->fromFloat(20.25));
         $result = $result->add($this->factory->fromFloat(5.0));
         
-        // Total devrait être 35.75
+        // Total should be 35.75
         $this->assertEqualsWithDelta(35.75, $result->getFloat(), 0.01);
         
-        // Multiplier par 2
+        // Multiply by 2
         $result = $result->multiply($this->factory->create(2, 1));
         $this->assertEqualsWithDelta(71.5, $result->getFloat(), 0.01);
     }
 
     /**
-     * Scénario: utilisation des factory constants (zero, one)
+     * Scenario: using factory constants (zero, one)
      */
     public function testFactoryConstants(): void
     {
@@ -219,7 +219,7 @@ class IntegrationTest extends TestCase
         
         $number = $this->factory->create(42, 7);
         
-        // Propriétés des éléments neutres
+        // Properties of identity elements
         $this->assertTrue($number->add($zero)->equals($number));
         $this->assertTrue($number->multiply($one)->equals($number));
         $this->assertTrue($number->subtract($zero)->equals($number));
@@ -227,13 +227,13 @@ class IntegrationTest extends TestCase
     }
 
     /**
-     * Scénario: calcul de TVA avec différents taux
+     * Scenario: VAT calculation with different rates
      */
     public function testVATCalculation(): void
     {
         $priceHT = $this->factory->fromFloat(100.0);
         
-        // Montant de TVA 20%
+        // VAT amount 20%
         $vatAmount = $this->calculator->increaseBy($priceHT, "20%")->subtract($priceHT);
         $vatPercent = $this->calculator->percentageOf($vatAmount, $priceHT);
         $this->assertEquals("20.00%", $vatPercent);
@@ -241,13 +241,13 @@ class IntegrationTest extends TestCase
         $priceTTC = $this->calculator->increaseBy($priceHT, "20%");
         $this->assertEquals(120.0, $priceTTC->getFloat());
         
-        // Calculer le montant de TVA
+        // Calculate the VAT amount
         $vatAmount = $priceTTC->subtract($priceHT);
         $this->assertEquals(20.0, $vatAmount->getFloat());
     }
 
     /**
-     * Scénario: calcul de ratio
+     * Scenario: ratio calculation
      */
     public function testRatioCalculation(): void
     {
@@ -259,7 +259,7 @@ class IntegrationTest extends TestCase
         $this->assertEquals("16/9", $ratio->toString());
         $this->assertEqualsWithDelta(1.7777777, $ratio->getFloat(), 0.001);
         
-        // Si largeur = 1920, calculer hauteur
+        // If width = 1920, calculate height
         $actualWidth = $this->factory->create(1920, 1);
         $actualHeight = $actualWidth->divideBy($ratio);
         
@@ -267,7 +267,7 @@ class IntegrationTest extends TestCase
     }
 
     /**
-     * Scénario: vérification d'immutabilité dans une chaîne complexe
+     * Scenario: immutability verification in a complex chain
      */
     public function testImmutabilityInComplexChain(): void
     {
@@ -275,23 +275,23 @@ class IntegrationTest extends TestCase
         $originalValue = $original->getFloat();
         $originalString = $original->toString();
         
-        // Effectuer de nombreuses opérations
+        // Perform many operations
         $result = $original
             ->add($this->factory->fromFloat(50.0))
             ->multiply($this->factory->create(2, 1))
             ->subtract($this->factory->fromFloat(100.0))
             ->divideBy($this->factory->create(5, 1));
         
-        // Vérifier que l'original n'a pas changé
+        // Verify that the original hasn't changed
         $this->assertEquals($originalValue, $original->getFloat());
         $this->assertEquals($originalString, $original->toString());
         
-        // Vérifier le résultat: (100+50)*2-100 = 300-100 = 200, 200/5 = 40
+        // Verify the result: (100+50)*2-100 = 300-100 = 200, 200/5 = 40
         $this->assertEquals(40.0, $result->getFloat());
     }
 
     /**
-     * Test d'intégration avec PercentageCalculator pour tous ses calculs
+     * Integration test with PercentageCalculator for all its calculations
      */
     public function testPercentageCalculatorIntegration(): void
     {
@@ -316,29 +316,29 @@ class IntegrationTest extends TestCase
     }
 
     /**
-     * Test avec des nombres négatifs dans un workflow complet
+     * Test with negative numbers in a complete workflow
      */
     public function testNegativeNumbersWorkflow(): void
     {
-        // Température
+        // Temperature
         $temp = $this->factory->fromFloat(-10.0);
         
-        // Augmentation de 50%
+        // 50% increase
         $increased = $this->calculator->increaseBy($temp, "50%");
         // -10 + 50% = -10 + (-5) = -15
         $this->assertEquals(-15.0, $increased->getFloat());
         
-        // Valeur absolue
+        // Absolute value
         $abs = $increased->abs();
         $this->assertEquals(15.0, $abs->getFloat());
         
-        // Négation
+        // Negation
         $negated = $abs->negate();
         $this->assertEquals(-15.0, $negated->getFloat());
     }
 
     /**
-     * Test comparaison après calculs complexes
+     * Test comparison after complex calculations
      */
     public function testComparisonsAfterCalculations(): void
     {
