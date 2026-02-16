@@ -23,8 +23,4 @@
             <output>docs/api</output>
         </api>
     </version>
-    <settings>
-        <setting name="graphs.enabled" value="true"/>
-        <setting name="guides.enabled" value="false"/>
-    </settings>
 </phpdocumentor>
