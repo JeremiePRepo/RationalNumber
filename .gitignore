@@ -8,6 +8,14 @@ composer.phar
 .phpunit.result.cache
 phpunit.xml
 
+# PHPDocumentor
+/docs/api/
+.phpdoc/
+phpdoc.xml
+
+# Benchmarks
+benchmark-results*.md
+
 # IDE
 .idea/
 .vscode/
