@@ -3,6 +3,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- **String Parsing**: New `fromString()` static method for flexible RationalNumber creation
+  - Supports fraction notation: `'1/2'`, `'22/7'`, `'3/4'`
+  - Supports decimal strings: `'0.25'` (automatically simplified to `1/4`)
+  - Supports integer strings: `'5'`, `'0'`, `'-3'`
+  - Supports scientific notation strings: `'1.5e-3'`
+  - Whitespace tolerant: `' 1/2 '` and `'1 / 2'` are valid
+  - Automatic reduction/normalization (e.g., `'6/8'` becomes `3/4`)
+  - Comprehensive validation with clear error messages
+  - Overflow protection for large numerators/denominators
+  - Added to both `RationalNumber` class and `RationalNumberFactory`
+  - **Added 19 comprehensive tests** covering all formats and edge cases
+
 ## [2.7.0] - 2026-02-16
 
 ### Added

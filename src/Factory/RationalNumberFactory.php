@@ -43,6 +43,16 @@ class RationalNumberFactory implements RationalNumberFactoryInterface
     }
 
     /**
+     * Create a RationalNumber from a string representation.
+     * @param string $input The string to parse (e.g., "1/2", "0.25", "5").
+     * @return RationalNumber The created rational number.
+     */
+    public function fromString(string $input): RationalNumber
+    {
+        return RationalNumber::fromString($input);
+    }
+
+    /**
      * Create a RationalNumber representing zero.
      * @return RationalNumber Zero (0/1).
      */

@@ -70,6 +70,65 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
     }
 
     /**
+     * Create a RationalNumber object from a string representation.
+     * Supports fraction notation (e.g., '1/2', '3/4'), decimal strings (e.g., '0.25'),
+     * integer strings (e.g., '5'), and scientific notation (e.g., '1.5e-3').
+     * Whitespace around the input and around the fraction separator is tolerated.
+     * 
+     * @param string $input The string to parse into a RationalNumber.
+     * @return RationalNumber The RationalNumber object created from the string.
+     * @throws InvalidArgumentException if the string format is invalid or empty.
+     * @throws ArithmeticError if the conversion would cause integer overflow.
+     */
+    public static function fromString(string $input): RationalNumber
+    {
+        // Trim whitespace from the entire input
+        $input = trim($input);
+        
+        // Check for empty string
+        if ($input === '') {
+            throw new InvalidArgumentException("Cannot create RationalNumber from empty string.");
+        }
+        
+        // Try to match fraction notation: "numerator/denominator" with optional whitespace
+        if (preg_match('/^([+-]?\d+)\s*\/\s*([+-]?\d+)$/', $input, $matches)) {
+            $numeratorStr = $matches[1];
+            $denominatorStr = $matches[2];
+            
+            // Validate for integer overflow before converting to int
+            // PHP_INT_MAX is typically 9223372036854775807 on 64-bit systems
+            if (abs((float)$numeratorStr) > PHP_INT_MAX) {
+                throw new \ArithmeticError(
+                    "Integer overflow in fraction string '{$input}'. Numerator exceeds PHP_INT_MAX."
+                );
+            }
+            
+            if (abs((float)$denominatorStr) > PHP_INT_MAX) {
+                throw new \ArithmeticError(
+                    "Integer overflow in fraction string '{$input}'. Denominator exceeds PHP_INT_MAX."
+                );
+            }
+            
+            $numerator = (int)$numeratorStr;
+            $denominator = (int)$denominatorStr;
+            
+            // Constructor will handle division by zero validation
+            return new self($numerator, $denominator);
+        }
+        
+        // Try to parse as numeric (decimal, integer, or scientific notation)
+        if (is_numeric($input)) {
+            // Delegate to fromFloat which handles decimals, integers, and scientific notation
+            return self::fromFloat((float)$input);
+        }
+        
+        // Invalid format
+        throw new InvalidArgumentException(
+            "Invalid string format: '{$input}'. Expected formats: '3/4', '0.25', '5', or scientific notation."
+        );
+    }
+
+    /**
      * Get the floating-point representation of the rational number.
      * @return float The rational number as a float.
      */

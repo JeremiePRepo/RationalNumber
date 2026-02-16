@@ -34,6 +34,13 @@ interface RationalNumberFactoryInterface
     public function fromPercentage(string $percentage): RationalNumber;
 
     /**
+     * Create a RationalNumber from a string representation.
+     * @param string $input The string to parse (e.g., "1/2", "0.25", "5").
+     * @return RationalNumber The created rational number.
+     */
+    public function fromString(string $input): RationalNumber;
+
+    /**
      * Create a RationalNumber representing zero.
      * @return RationalNumber Zero (0/1).
      */

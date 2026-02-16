@@ -38,6 +38,33 @@ class RationalNumberFactoryTest extends TestCase
         $this->assertEquals("1/2", $number->toString());
     }
 
+    public function testFromString() {
+        $number = $this->factory->fromString("3/4");
+        $this->assertInstanceOf(RationalNumber::class, $number);
+        $this->assertEquals("3/4", $number->toString());
+    }
+
+    public function testFromStringWithDecimal() {
+        $number = $this->factory->fromString("0.25");
+        $this->assertEquals("1/4", $number->toString());
+    }
+
+    public function testFromStringWithInteger() {
+        $number = $this->factory->fromString("5");
+        $this->assertEquals("5/1", $number->toString());
+    }
+
+    public function testFromStringWithSpaces() {
+        $number = $this->factory->fromString(" 1 / 2 ");
+        $this->assertEquals("1/2", $number->toString());
+    }
+
+    public function testFromStringThrowsExceptionOnInvalidFormat() {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage("Invalid string format");
+        $this->factory->fromString("invalid");
+    }
+
     public function testZero() {
         $zero = $this->factory->zero();
         $this->assertTrue($zero->isZero());
