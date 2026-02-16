@@ -20,6 +20,15 @@ All notable changes to this project will be documented in this file.
 - **PHP 8.4 compatibility:** No dynamic properties used; code is fully compatible with PHP 8.4's rules and deprecations.
 - **Dev dependencies:** PHPUnit remains on `^9.5` (tested with 9.6). Consider migrating `phpunit.xml.dist` with `vendor/bin/phpunit --migrate-configuration` to use the latest schema.
 
+## [2.6.0] - 2026-02-16
+
+### Maintenance
+
+- **Bumped minimum PHP requirement to PHP 8.5.**
+- **Verification:** Ran the full test suite under PHP 8.5.3 — all tests pass (50 tests, 98 assertions).
+- **PHP 8.5 compatibility:** Code is compatible with PHP 8.5; no dynamic properties or removed features in use.
+- **Dev dependencies:** PHPUnit remains on `^9.5` (tested with 9.6). Consider migrating `phpunit.xml.dist` with `vendor/bin/phpunit --migrate-configuration` to use the latest schema.
+
 ## [2.0.0] - 2026-02-15
 
 ### 🎉 Major Refactoring - SOLID Principles & Breaking Changes
