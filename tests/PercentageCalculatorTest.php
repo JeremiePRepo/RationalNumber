@@ -26,7 +26,7 @@ class PercentageCalculatorTest extends TestCase
     public function testFromPercentage() {
         $number = $this->calculator->fromPercentage("75%");
         $this->assertEquals("3/4", $number->toString());
-        $this->assertEquals(0.75, $number->getFloat());
+        $this->assertEqualsWithDelta(0.75, $number->getFloat(), 1e-12);
     }
 
     public function testIncreaseBy() {

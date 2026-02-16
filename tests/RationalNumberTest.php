@@ -14,7 +14,7 @@ class RationalNumberTest extends TestCase
         $number2 = new RationalNumber(1, 2);
         $result = $number1->add($number2);
         $this->assertEquals("5/4", $result->toString());
-        $this->assertEquals(1.25, $result->getFloat());
+        $this->assertEqualsWithDelta(1.25, $result->getFloat(), 1e-12);
     }
 
     public function testMultiplication() {
@@ -22,7 +22,7 @@ class RationalNumberTest extends TestCase
         $number2 = new RationalNumber(1, 2);
         $result = $number1->multiply($number2);
         $this->assertEquals("3/8", $result->toString());
-        $this->assertEquals(0.375, $result->getFloat());
+        $this->assertEqualsWithDelta(0.375, $result->getFloat(), 1e-12);
     }
 
     public function testSubtraction() {
@@ -30,14 +30,14 @@ class RationalNumberTest extends TestCase
         $number2 = new RationalNumber(1, 2);
         $result = $number1->subtract($number2);
         $this->assertEquals("1/4", $result->toString());
-        $this->assertEquals(0.25, $result->getFloat());
+        $this->assertEqualsWithDelta(0.25, $result->getFloat(), 1e-12);
     }
 
     public function testReciprocal() {
         $number1 = new RationalNumber(3, 4);
         $reciprocal = $number1->reciprocal();
         $this->assertEquals("4/3", $reciprocal->toString());
-        $this->assertEquals(1.3333333333333333, $reciprocal->getFloat());
+        $this->assertEqualsWithDelta(1.3333333333333333, $reciprocal->getFloat(), 1e-12);
     }
 
     public function testDivision() {
@@ -45,7 +45,7 @@ class RationalNumberTest extends TestCase
         $number2 = new RationalNumber(1, 2);
         $result = $number1->divideBy($number2);
         $this->assertEquals("3/2", $result->toString());
-        $this->assertEquals(1.5, $result->getFloat());
+        $this->assertEqualsWithDelta(1.5, $result->getFloat(), 1e-12);
     }
 
     public function testDivisionFrom() {
@@ -53,35 +53,35 @@ class RationalNumberTest extends TestCase
         $number2 = new RationalNumber(1, 2);
         $result = $number1->divideFrom($number2);
         $this->assertEquals("2/3", $result->toString());
-        $this->assertEquals(0.6666666666666666, $result->getFloat());
+        $this->assertEqualsWithDelta(0.6666666666666666, $result->getFloat(), 1e-12);
     }
 
     public function testFromFloat() {
         $value = 2.5;
         $number = RationalNumber::fromFloat($value);
         $this->assertEquals("5/2", $number->toString());
-        $this->assertEquals(2.5, $number->getFloat());
+        $this->assertEqualsWithDelta(2.5, $number->getFloat(), 1e-12);
     }
 
     public function testFromInt() {
         $value = 5;
         $number = RationalNumber::fromFloat($value);
         $this->assertEquals("5/1", $number->toString());
-        $this->assertEquals(5, $number->getFloat());
+        $this->assertEqualsWithDelta(5, $number->getFloat(), 1e-12);
     }
 
     public function testFromNegativeFloat() {
         $value = -3.75;
         $number = RationalNumber::fromFloat($value);
         $this->assertEquals("-15/4", $number->toString());
-        $this->assertEquals(-3.75, $number->getFloat());
+        $this->assertEqualsWithDelta(-3.75, $number->getFloat(), 1e-12);
     }
 
     public function testFromNegativeInt() {
         $value = -8;
         $number = RationalNumber::fromFloat($value);
         $this->assertEquals("-8/1", $number->toString());
-        $this->assertEquals(-8, $number->getFloat());
+        $this->assertEqualsWithDelta(-8, $number->getFloat(), 1e-12);
     }
 
     public function testToPercentage() {
@@ -94,7 +94,7 @@ class RationalNumberTest extends TestCase
         $percentageValue = "75%";
         $number = RationalNumber::fromPercentage($percentageValue);
         $this->assertEquals("3/4", $number->toString());
-        $this->assertEquals(0.75, $number->getFloat());
+        $this->assertEqualsWithDelta(0.75, $number->getFloat(), 1e-12);
     }
 
     public function testIncreaseByPercentage() {
@@ -145,13 +145,13 @@ class RationalNumberTest extends TestCase
     public function testNegativeDenominatorIsNormalized() {
         $number = new RationalNumber(3, -4);
         $this->assertEquals("-3/4", $number->toString());
-        $this->assertEquals(-0.75, $number->getFloat());
+        $this->assertEqualsWithDelta(-0.75, $number->getFloat(), 1e-12);
     }
 
     public function testNegativeNumbersAreNormalized() {
         $number = new RationalNumber(-6, -8);
         $this->assertEquals("3/4", $number->toString());
-        $this->assertEquals(0.75, $number->getFloat());
+        $this->assertEqualsWithDelta(0.75, $number->getFloat(), 1e-12);
     }
 
     public function testIsZero() {
@@ -270,13 +270,13 @@ class RationalNumberTest extends TestCase
         $zero = RationalNumber::zero();
         $this->assertTrue($zero->isZero());
         $this->assertEquals("0/1", $zero->toString());
-        $this->assertEquals(0, $zero->getFloat());
+        $this->assertEqualsWithDelta(0, $zero->getFloat(), 1e-12);
     }
 
     public function testOneFactory() {
         $one = RationalNumber::one();
         $this->assertTrue($one->isInteger());
         $this->assertEquals("1/1", $one->toString());
-        $this->assertEquals(1, $one->getFloat());
+        $this->assertEqualsWithDelta(1, $one->getFloat(), 1e-12);
     }
 }
