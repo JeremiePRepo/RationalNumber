@@ -3,7 +3,20 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [2.8.1] - 2026-02-16
+
+  ### Developer
+
+  - **Static Analysis**: Added PHPStan as a development dependency to improve code quality and enforce stricter typing and docblock correctness
+    - Added `phpstan/phpstan` to `composer.json` and composer scripts:
+      - `composer phpstan` to run `phpstan analyse -c phpstan.neon`
+      - `composer phpstan-baseline` to generate a baseline file
+    - New configuration file: `phpstan.neon` (level: max, analyzing `src`, excluding `tests`)
+    - Minor code fixes applied to satisfy PHPStan rules:
+      - Qualified `@throws \ArithmeticError` docblocks
+      - Guarded `substr(strrchr(...), ...)` usages to avoid passing `false` to `substr`
+    - No baseline committed by default; generate one via `composer phpstan-baseline` if you want to suppress existing legacy issues
+
 
 ## [2.8.0] - 2026-02-16
 

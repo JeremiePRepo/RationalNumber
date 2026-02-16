@@ -13,7 +13,12 @@
         "php": ">=8.3"
     },
     "require-dev": {
-        "phpunit/phpunit": "^9.5"
+        "phpunit/phpunit": "^9.5",
+        "phpstan/phpstan": "^1.10"
+    },
+    "scripts": {
+        "phpstan": "phpstan analyse -c phpstan.neon",
+        "phpstan-baseline": "phpstan analyse -c phpstan.neon --generate-baseline=phpstan-baseline.neon"
     },
     "config": {
         "preferred-install": "dist"
