@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace RationalNumber;
 
 use InvalidArgumentException;
+use RationalNumber\Contract\ArithmeticOperations;
+use RationalNumber\Contract\Comparable;
+use RationalNumber\Contract\NumericValue;
 
-final class RationalNumber
+final class RationalNumber implements ArithmeticOperations, Comparable, NumericValue
 {
     private int $numerator;
     private int $denominator;
@@ -64,11 +67,14 @@ final class RationalNumber
 
     /**
      * Multiply the current rational number by another RationalNumber object.
-     * @param RationalNumber $number The RationalNumber object to multiply with.
+     * @param ArithmeticOperations $number The RationalNumber object to multiply with.
      * @return RationalNumber The result of the multiplication as a new RationalNumber object.
      */
-    public function multiply(RationalNumber $number): RationalNumber
+    public function multiply(ArithmeticOperations $number): RationalNumber
     {
+        if (!$number instanceof RationalNumber) {
+            throw new InvalidArgumentException("Must be a RationalNumber instance.");
+        }
         $newNumerator = $this->numerator * $number->getNumerator();
         $newDenominator = $this->denominator * $number->getDenominator();
         return new RationalNumber($newNumerator, $newDenominator);
@@ -76,11 +82,14 @@ final class RationalNumber
 
     /**
      * Add the current rational number to another RationalNumber object.
-     * @param RationalNumber $number The RationalNumber object to add.
+     * @param ArithmeticOperations $number The RationalNumber object to add.
      * @return RationalNumber The result of the addition as a new RationalNumber object.
      */
-    public function add(RationalNumber $number): RationalNumber
+    public function add(ArithmeticOperations $number): RationalNumber
     {
+        if (!$number instanceof RationalNumber) {
+            throw new InvalidArgumentException("Must be a RationalNumber instance.");
+        }
         $newNumerator = $this->numerator * $number->getDenominator() + $number->getNumerator() * $this->denominator;
         $newDenominator = $this->denominator * $number->getDenominator();
         return new RationalNumber($newNumerator, $newDenominator);
@@ -88,11 +97,14 @@ final class RationalNumber
 
     /**
      * Subtract another RationalNumber object from the current rational number.
-     * @param RationalNumber $number The RationalNumber object to subtract.
+     * @param ArithmeticOperations $number The RationalNumber object to subtract.
      * @return RationalNumber The result of the subtraction as a new RationalNumber object.
      */
-    public function subtract(RationalNumber $number): RationalNumber
+    public function subtract(ArithmeticOperations $number): RationalNumber
     {
+        if (!$number instanceof RationalNumber) {
+            throw new InvalidArgumentException("Must be a RationalNumber instance.");
+        }
         $newNumerator = $this->numerator * $number->getDenominator() - $number->getNumerator() * $this->denominator;
         $newDenominator = $this->denominator * $number->getDenominator();
         return new RationalNumber($newNumerator, $newDenominator);
@@ -100,12 +112,15 @@ final class RationalNumber
     
     /**
      * Divide the current rational number by another RationalNumber object.
-     * @param RationalNumber $number The RationalNumber object to divide by.
+     * @param ArithmeticOperations $number The RationalNumber object to divide by.
      * @return RationalNumber The result of the division as a new RationalNumber object.
      * @throws InvalidArgumentException if dividing by zero.
      */
-    public function divideBy(RationalNumber $number): RationalNumber
+    public function divideBy(ArithmeticOperations $number): RationalNumber
     {
+        if (!$number instanceof RationalNumber) {
+            throw new InvalidArgumentException("Must be a RationalNumber instance.");
+        }
         if ($number->isZero()) {
             throw new InvalidArgumentException("Cannot divide by zero.");
         }
@@ -116,12 +131,15 @@ final class RationalNumber
 
     /**
      * Divide another RationalNumber object by the current rational number.
-     * @param RationalNumber $number The RationalNumber object to divide.
+     * @param ArithmeticOperations $number The RationalNumber object to divide.
      * @return RationalNumber The result of the division as a new RationalNumber object.
      * @throws InvalidArgumentException if dividing by zero.
      */
-    public function divideFrom(RationalNumber $number): RationalNumber
+    public function divideFrom(ArithmeticOperations $number): RationalNumber
     {
+        if (!$number instanceof RationalNumber) {
+            throw new InvalidArgumentException("Must be a RationalNumber instance.");
+        }
         if ($this->isZero()) {
             throw new InvalidArgumentException("Cannot divide by zero.");
         }
@@ -151,6 +169,24 @@ final class RationalNumber
         $percentage = rtrim($percentage, '%'); // Remove the percentage sign if present.
         $value = (float) $percentage / 100;
         return RationalNumber::fromFloat($value);
+    }
+
+    /**
+     * Create a RationalNumber representing zero.
+     * @return RationalNumber The zero rational number (0/1).
+     */
+    public static function zero(): RationalNumber
+    {
+        return new RationalNumber(0, 1);
+    }
+
+    /**
+     * Create a RationalNumber representing one.
+     * @return RationalNumber The one rational number (1/1).
+     */
+    public static function one(): RationalNumber
+    {
+        return new RationalNumber(1, 1);
     }
     
     /**
@@ -207,6 +243,103 @@ final class RationalNumber
     public function isInteger(): bool
     {
         return $this->denominator === 1;
+    }
+
+    /**
+     * Check if this rational number equals another.
+     * @param Comparable $other The rational number to compare with.
+     * @return bool True if equal, false otherwise.
+     */
+    public function equals(Comparable $other): bool
+    {
+        if (!$other instanceof RationalNumber) {
+            return false;
+        }
+
+        // Compare by cross-multiplication to avoid division
+        return $this->numerator * $other->getDenominator() === $other->getNumerator() * $this->denominator;
+    }
+
+    /**
+     * Compare this rational number to another.
+     * @param Comparable $other The rational number to compare with.
+     * @return int Returns -1 if this < other, 0 if equal, 1 if this > other.
+     */
+    public function compareTo(Comparable $other): int
+    {
+        if (!$other instanceof RationalNumber) {
+            throw new InvalidArgumentException("Can only compare with another RationalNumber.");
+        }
+
+        // Cross multiply to compare: a/b vs c/d => a*d vs c*b
+        $left = $this->numerator * $other->getDenominator();
+        $right = $other->getNumerator() * $this->denominator;
+
+        if ($left < $right) {
+            return -1;
+        } elseif ($left > $right) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    /**
+     * Check if this rational number is greater than another.
+     * @param Comparable $other The rational number to compare with.
+     * @return bool True if this > other.
+     */
+    public function isGreaterThan(Comparable $other): bool
+    {
+        return $this->compareTo($other) > 0;
+    }
+
+    /**
+     * Check if this rational number is less than another.
+     * @param Comparable $other The rational number to compare with.
+     * @return bool True if this < other.
+     */
+    public function isLessThan(Comparable $other): bool
+    {
+        return $this->compareTo($other) < 0;
+    }
+
+    /**
+     * Check if this rational number is greater than or equal to another.
+     * @param Comparable $other The rational number to compare with.
+     * @return bool True if this >= other.
+     */
+    public function isGreaterThanOrEqual(Comparable $other): bool
+    {
+        return $this->compareTo($other) >= 0;
+    }
+
+    /**
+     * Check if this rational number is less than or equal to another.
+     * @param Comparable $other The rational number to compare with.
+     * @return bool True if this <= other.
+     */
+    public function isLessThanOrEqual(Comparable $other): bool
+    {
+        return $this->compareTo($other) <= 0;
+    }
+
+    /**
+     * Get the absolute value of this rational number.
+     * @return RationalNumber The absolute value.
+     */
+    public function abs(): RationalNumber
+    {
+        return new RationalNumber(abs($this->numerator), $this->denominator);
+    }
+
+    /**
+     * Negate this rational number.
+     * @return RationalNumber The negated value.
+     */
+    public function negate(): RationalNumber
+    {
+        return new RationalNumber(-$this->numerator, $this->denominator);
     }
 
     /**

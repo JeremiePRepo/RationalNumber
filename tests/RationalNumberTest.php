@@ -180,4 +180,103 @@ class RationalNumberTest extends TestCase
         $number = new RationalNumber(3, 4);
         $this->assertEquals("3/4", (string)$number);
     }
+
+    // Tests for comparison methods (Comparable interface)
+    
+    public function testEquals() {
+        $number1 = new RationalNumber(3, 4);
+        $number2 = new RationalNumber(6, 8); // Equivalent to 3/4 after normalization
+        $number3 = new RationalNumber(1, 2);
+        
+        $this->assertTrue($number1->equals($number2));
+        $this->assertFalse($number1->equals($number3));
+    }
+
+    public function testCompareTo() {
+        $smaller = new RationalNumber(1, 4);
+        $larger = new RationalNumber(3, 4);
+        $equal = new RationalNumber(3, 4);
+        
+        $this->assertEquals(-1, $smaller->compareTo($larger));
+        $this->assertEquals(1, $larger->compareTo($smaller));
+        $this->assertEquals(0, $larger->compareTo($equal));
+    }
+
+    public function testIsGreaterThan() {
+        $smaller = new RationalNumber(1, 4);
+        $larger = new RationalNumber(3, 4);
+        
+        $this->assertTrue($larger->isGreaterThan($smaller));
+        $this->assertFalse($smaller->isGreaterThan($larger));
+        $this->assertFalse($larger->isGreaterThan($larger));
+    }
+
+    public function testIsLessThan() {
+        $smaller = new RationalNumber(1, 4);
+        $larger = new RationalNumber(3, 4);
+        
+        $this->assertTrue($smaller->isLessThan($larger));
+        $this->assertFalse($larger->isLessThan($smaller));
+        $this->assertFalse($smaller->isLessThan($smaller));
+    }
+
+    public function testIsGreaterThanOrEqual() {
+        $smaller = new RationalNumber(1, 4);
+        $larger = new RationalNumber(3, 4);
+        $equal = new RationalNumber(3, 4);
+        
+        $this->assertTrue($larger->isGreaterThanOrEqual($smaller));
+        $this->assertTrue($larger->isGreaterThanOrEqual($equal));
+        $this->assertFalse($smaller->isGreaterThanOrEqual($larger));
+    }
+
+    public function testIsLessThanOrEqual() {
+        $smaller = new RationalNumber(1, 4);
+        $larger = new RationalNumber(3, 4);
+        $equal = new RationalNumber(1, 4);
+        
+        $this->assertTrue($smaller->isLessThanOrEqual($larger));
+        $this->assertTrue($smaller->isLessThanOrEqual($equal));
+        $this->assertFalse($larger->isLessThanOrEqual($smaller));
+    }
+
+    // Tests for abs() and negate()
+    
+    public function testAbs() {
+        $positive = new RationalNumber(3, 4);
+        $negative = new RationalNumber(-3, 4);
+        
+        $this->assertEquals("3/4", $positive->abs()->toString());
+        $this->assertEquals("3/4", $negative->abs()->toString());
+    }
+
+    public function testNegate() {
+        $positive = new RationalNumber(3, 4);
+        $negative = new RationalNumber(-3, 4);
+        
+        $this->assertEquals("-3/4", $positive->negate()->toString());
+        $this->assertEquals("3/4", $negative->negate()->toString());
+    }
+
+    public function testNegateZero() {
+        $zero = new RationalNumber(0, 1);
+        $this->assertEquals("0/1", $zero->negate()->toString());
+        $this->assertTrue($zero->negate()->isZero());
+    }
+
+    // Tests for factory methods
+    
+    public function testZeroFactory() {
+        $zero = RationalNumber::zero();
+        $this->assertTrue($zero->isZero());
+        $this->assertEquals("0/1", $zero->toString());
+        $this->assertEquals(0, $zero->getFloat());
+    }
+
+    public function testOneFactory() {
+        $one = RationalNumber::one();
+        $this->assertTrue($one->isInteger());
+        $this->assertEquals("1/1", $one->toString());
+        $this->assertEquals(1, $one->getFloat());
+    }
 }
