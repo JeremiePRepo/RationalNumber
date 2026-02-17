@@ -43,7 +43,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
      * 
      * @param float|int $value The scalar value to create a RationalNumber object from.
      * @return RationalNumber The RationalNumber object created from the scalar value.
-    * @throws \ArithmeticError if the conversion would cause integer overflow.
+     * @throws \ArithmeticError if the conversion would cause integer overflow.
      */
     public static function fromFloat($value): RationalNumber
     {
@@ -83,7 +83,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
      * @param string $input The string to parse into a RationalNumber.
      * @return RationalNumber The RationalNumber object created from the string.
      * @throws InvalidArgumentException if the string format is invalid or empty.
-    * @throws \ArithmeticError if the conversion would cause integer overflow.
+     * @throws \ArithmeticError if the conversion would cause integer overflow.
      */
     public static function fromString(string $input): RationalNumber
     {
@@ -146,7 +146,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
      * Multiply the current rational number by another RationalNumber object.
      * @param ArithmeticOperations $number The RationalNumber object to multiply with.
      * @return RationalNumber The result of the multiplication as a new RationalNumber object.
-    * @throws \ArithmeticError if the operation would cause integer overflow.
+     * @throws \ArithmeticError if the operation would cause integer overflow.
      */
     public function multiply(ArithmeticOperations $number): RationalNumber
     {
@@ -167,7 +167,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
      * Add the current rational number to another RationalNumber object.
      * @param ArithmeticOperations $number The RationalNumber object to add.
      * @return RationalNumber The result of the addition as a new RationalNumber object.
-    * @throws \ArithmeticError if the operation would cause integer overflow.
+     * @throws \ArithmeticError if the operation would cause integer overflow.
      */
     public function add(ArithmeticOperations $number): RationalNumber
     {
@@ -189,7 +189,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
      * Subtract another RationalNumber object from the current rational number.
      * @param ArithmeticOperations $number The RationalNumber object to subtract.
      * @return RationalNumber The result of the subtraction as a new RationalNumber object.
-    * @throws \ArithmeticError if the operation would cause integer overflow.
+     * @throws \ArithmeticError if the operation would cause integer overflow.
      */
     public function subtract(ArithmeticOperations $number): RationalNumber
     {
@@ -689,7 +689,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
      * 
      * Expects an array with 'numerator' and 'denominator' keys.
      * 
-    * @param array<mixed, mixed> $data Array containing 'numerator' and 'denominator' keys.
+     * @param array<mixed, mixed> $data Array containing 'numerator' and 'denominator' keys.
      * @return RationalNumber The reconstructed RationalNumber object.
      * @throws InvalidArgumentException if required keys are missing or invalid.
      */
@@ -758,7 +758,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
      * @param int $b The second operand.
      * @param string $operation A description of the operation for error message context.
      * @return void
-    * @throws \ArithmeticError if the multiplication would overflow.
+     * @throws \ArithmeticError if the multiplication would overflow.
      */
     private function checkMultiplicationOverflow(int $a, int $b, string $operation): void
     {
@@ -793,7 +793,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
      * 
      * @param float $value The float value in scientific notation.
      * @return RationalNumber The resulting rational number.
-    * @throws \ArithmeticError if conversion would cause overflow.
+     * @throws \ArithmeticError if conversion would cause overflow.
      */
     private static function fromScientificNotation(float $value): RationalNumber
     {
