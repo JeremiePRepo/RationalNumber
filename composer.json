@@ -20,8 +20,8 @@
     "scripts": {
         "phpstan": "phpstan analyse -c phpstan.neon",
         "phpstan-baseline": "phpstan analyse -c phpstan.neon --generate-baseline=phpstan-baseline.neon",
-        "docs": "phpdoc run",
-        "docs:watch": "phpdoc run --watch",
+        "docs": "phpdoc -d src -t docs/api --title=\"RationalNumber API Documentation\" --ignore=vendor/,tests/",
+        "docs:watch": "phpdoc -d src -t docs/api --title=\"RationalNumber API Documentation\" --ignore=vendor/,tests/ --watch",
         "benchmark": "php tests/Benchmarks/BenchmarkRunner.php"
     },
     "config": {

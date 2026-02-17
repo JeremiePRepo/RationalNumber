@@ -12,6 +12,7 @@ phpunit.xml
 /docs/api/
 .phpdoc/
 phpdoc.xml
+ast.dump
 
 # Benchmarks
 benchmark-results*.md
