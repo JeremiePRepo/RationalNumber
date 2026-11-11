@@ -27,11 +27,20 @@ final readonly class RationalNumber implements ArithmeticOperations, Comparable,
      * @param int $numerator The numerator of the rational number.
      * @param int $denominator The denominator of the rational number (default is 1).
      * @throws InvalidArgumentException if the denominator is set to zero.
+     * @throws IntegerOverflowException if the numerator or the denominator is PHP_INT_MIN.
      */
     public function __construct(int $numerator, int $denominator = 1)
     {
         if ($denominator === 0) {
             throw new InvalidArgumentException("Denominator cannot be zero.");
+        }
+
+        // -PHP_INT_MIN does not fit in an int, so normalization (sign, GCD) could not be exact.
+        if ($numerator === PHP_INT_MIN || $denominator === PHP_INT_MIN) {
+            throw IntegerOverflowException::create(
+                "Integer overflow: PHP_INT_MIN cannot be used as a numerator or a denominator "
+                . "because its opposite does not fit in an integer."
+            );
         }
 
         [$this->numerator, $this->denominator] = self::normalize($numerator, $denominator);

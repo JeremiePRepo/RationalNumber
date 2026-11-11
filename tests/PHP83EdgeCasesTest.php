@@ -452,6 +452,26 @@ class PHP83EdgeCasesTest extends TestCase
         $operation();
     }
 
+    /**
+     * @return iterable<string, array{callable(): mixed}>
+     */
+    public static function intMinProvider(): iterable
+    {
+        yield 'numerator' => [fn () => new RationalNumber(PHP_INT_MIN)];
+        yield 'denominator' => [fn () => new RationalNumber(1, PHP_INT_MIN)];
+        yield 'fraction string' => [fn () => RationalNumber::fromString('-9223372036854775808/1')];
+        yield 'integer string' => [fn () => RationalNumber::fromString('-9223372036854775808')];
+        yield 'subtraction result' => [fn () => (new RationalNumber(-PHP_INT_MAX))->subtract(new RationalNumber(1))];
+    }
+
+    #[DataProvider('intMinProvider')]
+    public function testIntMinIsRejectedWithOverflow(callable $operation): void
+    {
+        $this->expectException(IntegerOverflowException::class);
+
+        $operation();
+    }
+
     public function testLargestProductThatFitsDoesNotOverflow(): void
     {
         // 3 * 3074457345618258602 = 9223372036854775806 = PHP_INT_MAX - 1
