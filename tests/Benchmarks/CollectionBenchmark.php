@@ -9,11 +9,15 @@ use RationalNumber\Collection\RationalCollection;
 
 /**
  * Benchmark collection operations
+ *
+ * @phpstan-import-type BenchmarkResult from BenchmarkRunner
  */
 class CollectionBenchmark
 {
     /**
      * Benchmark sum operation on 1000 elements
+     *
+     * @return BenchmarkResult
      */
     public function benchCollectionSum1000(): array
     {
@@ -36,6 +40,8 @@ class CollectionBenchmark
 
     /**
      * Benchmark average operation on 1000 elements
+     *
+     * @return BenchmarkResult
      */
     public function benchCollectionAverage1000(): array
     {
@@ -58,6 +64,8 @@ class CollectionBenchmark
 
     /**
      * Benchmark filter operation on 1000 elements
+     *
+     * @return BenchmarkResult
      */
     public function benchCollectionFilter1000(): array
     {
@@ -80,6 +88,8 @@ class CollectionBenchmark
 
     /**
      * Benchmark map operation on 1000 elements
+     *
+     * @return BenchmarkResult
      */
     public function benchCollectionMap1000(): array
     {
@@ -102,6 +112,8 @@ class CollectionBenchmark
 
     /**
      * Benchmark min/max operations on 1000 elements
+     *
+     * @return BenchmarkResult
      */
     public function benchCollectionMinMax1000(): array
     {
@@ -126,6 +138,8 @@ class CollectionBenchmark
 
     /**
      * Benchmark chained operations
+     *
+     * @return BenchmarkResult
      */
     public function benchCollectionChainedOperations(): array
     {
@@ -154,6 +168,8 @@ class CollectionBenchmark
 
     /**
      * Run all collection benchmarks
+     *
+     * @return list<BenchmarkResult>
      */
     public function runAll(): array
     {

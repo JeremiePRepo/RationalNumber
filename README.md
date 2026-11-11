@@ -1,7 +1,7 @@
 # RationalNumber
 
 ![PHP Version](https://img.shields.io/badge/PHP-8.4%2B-blue)
-![Tests](https://img.shields.io/badge/tests-368%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-360%20passing-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![CI](https://github.com/JeremiePRepo/RationalNumber/actions/workflows/ci.yml/badge.svg)
 ![PHPStan](https://img.shields.io/badge/PHPStan-level%20max-brightgreen)
@@ -58,7 +58,7 @@ Perfect for financial calculations, scientific computing, and anywhere precision
 - JSON serialization
 - Collections for batch processing
 - Overflow detection with GMP suggestions
-- 368 tests, 770 assertions
+- 360 tests, 745 assertions
 
 ## Requirements
 
@@ -251,7 +251,7 @@ composer phpstan   # static analysis (level max)
 composer cs        # coding style (PSR-12)
 ```
 
-**Current metrics:** 368 tests, 770 assertions
+**Current metrics:** 360 tests, 745 assertions
 
 Coverage includes:
 - All arithmetic and comparison operations

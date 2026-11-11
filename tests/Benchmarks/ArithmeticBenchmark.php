@@ -8,11 +8,15 @@ use RationalNumber\RationalNumber;
 
 /**
  * Benchmark basic arithmetic operations
+ *
+ * @phpstan-import-type BenchmarkResult from BenchmarkRunner
  */
 class ArithmeticBenchmark
 {
     /**
      * Benchmark 10,000 addition operations
+     *
+     * @return BenchmarkResult
      */
     public function benchAddition10k(): array
     {
@@ -38,6 +42,8 @@ class ArithmeticBenchmark
 
     /**
      * Benchmark 10,000 multiplication operations
+     *
+     * @return BenchmarkResult
      */
     public function benchMultiplication10k(): array
     {
@@ -66,6 +72,8 @@ class ArithmeticBenchmark
 
     /**
      * Benchmark 10,000 division operations
+     *
+     * @return BenchmarkResult
      */
     public function benchDivision10k(): array
     {
@@ -93,6 +101,8 @@ class ArithmeticBenchmark
 
     /**
      * Benchmark 10,000 subtraction operations
+     *
+     * @return BenchmarkResult
      */
     public function benchSubtraction10k(): array
     {
@@ -118,6 +128,8 @@ class ArithmeticBenchmark
 
     /**
      * Benchmark mixed arithmetic operations
+     *
+     * @return BenchmarkResult
      */
     public function benchMixedOperations(): array
     {
@@ -151,6 +163,8 @@ class ArithmeticBenchmark
 
     /**
      * Run all arithmetic benchmarks
+     *
+     * @return list<BenchmarkResult>
      */
     public function runAll(): array
     {

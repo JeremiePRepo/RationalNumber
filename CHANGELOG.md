@@ -3,6 +3,35 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.0] - Unreleased
+
+A smaller and fully exact API. Code that runs without deprecation warnings on 2.11 needs only
+the changes listed in [UPGRADE-3.0.md](UPGRADE-3.0.md#changes-211-cannot-warn-about).
+
+### Removed
+
+- `Factory\RationalNumberFactory` and `Factory\RationalNumberFactoryInterface`: use the
+  constructor and the static constructors of `RationalNumber`.
+- `Calculator\PercentageCalculator`: use `increaseByPercentage()`, `decreaseByPercentage()`,
+  `toPercentage()` and `fromPercentage()`.
+- The `Contract\ArithmeticOperations`, `Contract\Comparable` and `Contract\NumericValue` interfaces.
+  Methods now take a `RationalNumber`.
+- `RationalNumber::reduce()` (numbers are always reduced) and `RationalNumber::divideFrom()`.
+- `RationalCollection::clear()` and writes through array access.
+
+### Changed
+
+- **PHP 8.4** or later is required.
+- `IntegerOverflowException` extends `\OverflowException` instead of `\ArithmeticError`.
+- `RationalCollection` is immutable (`final readonly`). `add()` returns a new collection. Array
+  writes and `unset()` throw the new `ImmutableCollectionException` (a `\LogicException`), and
+  the constructor rejects elements that are not `RationalNumber` instances.
+- `floor()`, `ceil()`, `round()` and `toPercentage()` use exact integer arithmetic. Results
+  above 2^53 are now correct, `round()` throws `IntegerOverflowException` when the result does not
+  fit, and `toPercentage()` accepts 0 to 16 decimal places and never prints `-0`.
+- `sqrt(int $decimals)` requires the number of decimal places (0 to 9). It returns the square root
+  rounded to that precision, computed exactly with integers.
+
 ## [2.11.0] - 2026-11-11
 
 The last 2.x release before 3.0. It is backward compatible, and it deprecates (with an

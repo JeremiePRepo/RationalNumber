@@ -168,6 +168,7 @@ try {
 | `DivisionByZeroException` | `InvalidArgumentException` | `divideBy()` zero, `reciprocal()` of zero |
 | `EmptyCollectionException` | `InvalidArgumentException` | `average()`, `min()`, `max()` of an empty collection |
 | `IntegerOverflowException` | `\OverflowException` | any value that does not fit in a 64-bit integer (`\ArithmeticError` in 2.x) |
+| `ImmutableCollectionException` | `\LogicException` | writing to a `RationalCollection` through array access (`[]=`, `unset()`) |
 
 **For very large numbers**, consider installing the GMP extension:
 

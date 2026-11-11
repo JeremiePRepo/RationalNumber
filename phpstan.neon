@@ -2,7 +2,6 @@ parameters:
     level: max
     paths:
         - src
-    excludePaths:
-        - tests
+        - tests/Benchmarks
 
 # You can generate a baseline with: composer phpstan-baseline

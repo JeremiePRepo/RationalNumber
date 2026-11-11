@@ -8,11 +8,15 @@ use RationalNumber\RationalNumber;
 
 /**
  * Benchmark complex mathematical operations
+ *
+ * @phpstan-import-type BenchmarkResult from BenchmarkRunner
  */
 class ComplexOperationsBenchmark
 {
     /**
      * Benchmark GCD calculation on large numbers
+     *
+     * @return BenchmarkResult
      */
     public function benchGCDLargeNumbers(): array
     {
@@ -37,6 +41,8 @@ class ComplexOperationsBenchmark
 
     /**
      * Benchmark power operations
+     *
+     * @return BenchmarkResult
      */
     public function benchPowerOperations(): array
     {
@@ -60,6 +66,8 @@ class ComplexOperationsBenchmark
 
     /**
      * Benchmark square root calculations
+     *
+     * @return BenchmarkResult
      */
     public function benchSqrtOperations(): array
     {
@@ -82,6 +90,8 @@ class ComplexOperationsBenchmark
 
     /**
      * Benchmark comparison operations
+     *
+     * @return BenchmarkResult
      */
     public function benchComparisonOperations(): array
     {
@@ -89,11 +99,12 @@ class ComplexOperationsBenchmark
 
         $a = RationalNumber::fromFloat(10.5);
         $b = RationalNumber::fromFloat(7.25);
+        $equalCount = 0;
 
         for ($i = 0; $i < 10000; $i++) {
             $a->isGreaterThan($b);
             $a->isLessThan($b);
-            $a->equals($b);
+            $equalCount += $a->equals($b) ? 1 : 0;
             $a->compareTo($b);
         }
 
@@ -104,11 +115,14 @@ class ComplexOperationsBenchmark
             'name' => 'Comparisons (40k operations)',
             'duration' => round($duration, 4),
             'ops_per_second' => round($opsPerSecond, 2),
+            'result_count' => $equalCount,
         ];
     }
 
     /**
      * Benchmark rounding operations
+     *
+     * @return BenchmarkResult
      */
     public function benchRoundingOperations(): array
     {
@@ -133,6 +147,8 @@ class ComplexOperationsBenchmark
 
     /**
      * Benchmark percentage operations
+     *
+     * @return BenchmarkResult
      */
     public function benchPercentageOperations(): array
     {
@@ -158,6 +174,8 @@ class ComplexOperationsBenchmark
 
     /**
      * Run all complex operation benchmarks
+     *
+     * @return list<BenchmarkResult>
      */
     public function runAll(): array
     {

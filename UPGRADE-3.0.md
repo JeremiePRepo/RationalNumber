@@ -8,8 +8,6 @@ visible, and fix each one using the table below. Code that runs without deprecat
 2.11 is ready for 3.0, apart from the two points under
 [Changes 2.11 cannot warn about](#changes-211-cannot-warn-about).
 
-> 3.0 is not released yet. This guide follows the 3.0 roadmap and will be completed when 3.0 ships.
-
 ## Requirements
 
 | | 2.x | 3.0 |
@@ -85,11 +83,35 @@ $collection = $collection->add($n);   // 2.11 and 3.0
 2.11 cannot detect an ignored return value. Search your code for `->add(` calls on collections
 whose result is not assigned.
 
+Writes through array access (`$collection[] = $n`, `$collection[$i] = $n`, `unset($collection[$i])`)
+throw a `RationalNumber\Exception\ImmutableCollectionException`, which extends `\LogicException`.
+They were deprecated in 2.11.
+
+### `sqrt()` signature
+
+`sqrt()` now takes a required number of decimal places for the result, between 0 and 9. In 2.x
+its optional `$precision` argument was a number of approximation iterations (default and maximum
+10). The result is the square root rounded to the nearest `10^-$decimals`, computed without floats:
+
+```php
+$root = $n->sqrt();     // 2.x: approximation; 3.0: ArgumentCountError
+$root = $n->sqrt(10);   // 2.x: 10 iterations; 3.0: InvalidArgumentException (max 9 decimals)
+$root = $n->sqrt(6);    // 3.0: rounded to 6 decimal places, e.g. 707107/500000 for 2
+```
+
+It throws an `IntegerOverflowException` when `value × 10^(2 × $decimals)` does not fit in a 64-bit
+integer. For large values, use fewer decimal places.
+
 ## Behaviour changes
 
 - `round()`, `floor()`, `ceil()` and `toPercentage()` use exact integer arithmetic instead of floats.
   Results are unchanged for usual values. Only numbers above 2^53, which were wrong before, change.
-- `sqrt()` requires an explicit precision (number of decimal places) instead of going through a float.
+- `round($denominator)` throws an `IntegerOverflowException` when the rounded numerator does not fit
+  in a 64-bit integer.
+- `toPercentage($decimals)` accepts 0 to 16 decimal places, and throws an `InvalidArgumentException`
+  otherwise. It never prints `-0`: a negative value that rounds to zero gives `0.00%`.
+- Methods that took one of the removed interfaces now take a `RationalNumber`. Passing anything
+  else throws a native `TypeError` instead of an `InvalidArgumentException`.
 
 ## Automating the migration
 

@@ -171,7 +171,7 @@ If benchmarks show performance issues:
 - Batch operations when possible
 
 ### For Complex Operations
-- Reduce sqrt precision parameter if high accuracy isn't needed
+- Use fewer `sqrt()` decimal places if high accuracy is not needed
 - Use integer power operations when possible
 - Pre-compute power tables for repeated exponents
 

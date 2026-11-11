@@ -8,9 +8,12 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 
 /**
  * Main benchmark runner
+ *
+ * @phpstan-type BenchmarkResult array{name: string, duration: float, ops_per_second?: float, result?: string|float, result_count?: int, min?: float, max?: float}
  */
 class BenchmarkRunner
 {
+    /** @var list<BenchmarkResult> */
     private array $results = [];
 
     public function run(): void
@@ -52,6 +55,9 @@ class BenchmarkRunner
         $this->saveResults();
     }
 
+    /**
+     * @param list<BenchmarkResult> $benchmarks
+     */
     private function runBenchmarkGroup(array $benchmarks): void
     {
         foreach ($benchmarks as $result) {
@@ -60,6 +66,9 @@ class BenchmarkRunner
         }
     }
 
+    /**
+     * @param BenchmarkResult $result
+     */
     private function printResult(array $result): void
     {
         echo sprintf(
@@ -130,7 +139,7 @@ class BenchmarkRunner
 }
 
 // Run benchmarks if executed directly
-if (php_sapi_name() === 'cli' && basename(__FILE__) === basename($_SERVER['PHP_SELF'])) {
+if (php_sapi_name() === 'cli' && realpath(__FILE__) === realpath(get_included_files()[0])) {
     $runner = new BenchmarkRunner();
     $runner->run();
 }
