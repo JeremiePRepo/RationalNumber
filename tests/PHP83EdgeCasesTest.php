@@ -6,6 +6,7 @@ namespace RationalNumber\Tests;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use RationalNumber\Collection\RationalCollection;
 use RationalNumber\Exception\IntegerOverflowException;
 use RationalNumber\RationalNumber;
 use InvalidArgumentException;
@@ -470,6 +471,46 @@ class PHP83EdgeCasesTest extends TestCase
         $this->expectException(IntegerOverflowException::class);
 
         $operation();
+    }
+
+    /**
+     * Pairs [smaller, larger] whose cross-products (a*d, c*b) do not fit in an int.
+     *
+     * @return iterable<string, array{RationalNumber, RationalNumber}>
+     */
+    public static function largeOrderedPairProvider(): iterable
+    {
+        // Cross-products round to the same float: the old comparison said "equal".
+        yield 'same denominator' => [new RationalNumber(PHP_INT_MAX - 2, 2), new RationalNumber(PHP_INT_MAX, 2)];
+        yield 'negative' => [new RationalNumber(-PHP_INT_MAX, 2), new RationalNumber(-PHP_INT_MAX + 2, 2)];
+        // 1 + 1/(MAX - 1) < 1 + 1/(MAX - 2): equal integer parts, the remainders decide.
+        yield 'close to one' => [
+            new RationalNumber(PHP_INT_MAX, PHP_INT_MAX - 1),
+            new RationalNumber(PHP_INT_MAX - 1, PHP_INT_MAX - 2),
+        ];
+        yield 'opposite signs' => [new RationalNumber(-PHP_INT_MAX, 3), new RationalNumber(PHP_INT_MAX, 5)];
+        yield 'different integer parts' => [new RationalNumber(PHP_INT_MAX, 7), new RationalNumber(PHP_INT_MAX, 3)];
+    }
+
+    #[DataProvider('largeOrderedPairProvider')]
+    public function testCompareLargeNumbersExactly(RationalNumber $smaller, RationalNumber $larger): void
+    {
+        $this->assertSame(-1, $smaller->compareTo($larger));
+        $this->assertSame(1, $larger->compareTo($smaller));
+        $this->assertSame(0, $larger->compareTo(new RationalNumber($larger->getNumerator(), $larger->getDenominator())));
+        $this->assertTrue($smaller->isLessThan($larger));
+        $this->assertFalse($smaller->equals($larger));
+        $this->assertTrue($larger->equals(new RationalNumber($larger->getNumerator(), $larger->getDenominator())));
+    }
+
+    public function testMinAndMaxOfLargeNumbers(): void
+    {
+        $smallest = new RationalNumber(PHP_INT_MAX - 2, 2);
+        $largest = new RationalNumber(PHP_INT_MAX, 2);
+        $collection = new RationalCollection([$largest, $smallest]);
+
+        $this->assertSame($smallest, $collection->min());
+        $this->assertSame($largest, $collection->max());
     }
 
     public function testLargestProductThatFitsDoesNotOverflow(): void

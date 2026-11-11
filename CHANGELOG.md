@@ -31,6 +31,12 @@ deprecation warnings on 2.11 is ready for 3.0. See [UPGRADE-3.0.md](UPGRADE-3.0.
 - `multiply()`, `add()`, `subtract()` and `pow()` let some results just above `PHP_INT_MAX` through
   their overflow check (e.g. `2^62 * 2`, whose float bound is rounded) and then threw a `TypeError`
   instead of an overflow error.
+- `equals()` and `compareTo()` (and so `isGreaterThan()`, `isLessThan()`, ..., and
+  `RationalCollection::min()` / `max()`) multiplied the fractions crosswise without overflow
+  check: on large values the products silently became floats, so `(PHP_INT_MAX - 2)/2` was
+  "equal" to `PHP_INT_MAX/2`. `equals()` now compares the reduced parts, and `compareTo()` falls
+  back to an exact comparison (continued fractions, no multiplication) when the products would
+  not fit.
 - `unserialize()` bypassed the constructor, so a stored payload could produce a non-normalized
   (`2/-4`) or invalid (zero denominator) instance. `RationalNumber::__unserialize()` now applies
   the constructor checks and normalization; the serialized format is unchanged.

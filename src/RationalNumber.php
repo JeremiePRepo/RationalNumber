@@ -20,6 +20,11 @@ use RationalNumber\Internal\Deprecation;
  */
 final readonly class RationalNumber implements ArithmeticOperations, Comparable, NumericValue, \JsonSerializable
 {
+    /**
+     * floor(sqrt(PHP_INT_MAX)): the product of two integers up to this value (in absolute value) fits in an int.
+     */
+    private const SQRT_INT_MAX = 3037000499;
+
     private int $numerator;
     private int $denominator;
 
@@ -430,8 +435,8 @@ final readonly class RationalNumber implements ArithmeticOperations, Comparable,
             return false;
         }
 
-        // Compare by cross-multiplication to avoid division
-        return $this->numerator * $other->getDenominator() === $other->getNumerator() * $this->denominator;
+        // Both fractions are always in their simplest form, so equal values have equal parts.
+        return $this->numerator === $other->numerator && $this->denominator === $other->denominator;
     }
 
     /**
@@ -445,17 +450,68 @@ final readonly class RationalNumber implements ArithmeticOperations, Comparable,
             throw new InvalidArgumentException("Can only compare with another RationalNumber.");
         }
 
-        // Cross multiply to compare: a/b vs c/d => a*d vs c*b
-        $left = $this->numerator * $other->getDenominator();
-        $right = $other->getNumerator() * $this->denominator;
+        $a = $this->numerator;
+        $b = $this->denominator;
+        $c = $other->numerator;
+        $d = $other->denominator;
 
-        if ($left < $right) {
-            return -1;
-        } elseif ($left > $right) {
-            return 1;
-        } else {
-            return 0;
+        // a/b vs c/d => a*d vs c*b. Common case: every term is below sqrt(PHP_INT_MAX), so both
+        // products fit (no function call on this hot path). Otherwise check them, or compare exactly.
+        if (
+            ($b <= self::SQRT_INT_MAX && $d <= self::SQRT_INT_MAX
+                && $a <= self::SQRT_INT_MAX && $a >= -self::SQRT_INT_MAX
+                && $c <= self::SQRT_INT_MAX && $c >= -self::SQRT_INT_MAX)
+            || (self::productFits($a, $d) && self::productFits($c, $b))
+        ) {
+            return $a * $d <=> $c * $b;
         }
+
+        return self::compareFractions($a, $b, $c, $d);
+    }
+
+    /**
+     * Compare a/b with c/d exactly (b, d > 0) without multiplying, by comparing their continued
+     * fraction expansions: integer parts first, then the inverted remainders.
+     *
+     * @return int -1, 0 or 1.
+     */
+    private static function compareFractions(int $a, int $b, int $c, int $d): int
+    {
+        $sign = 1;
+        while (true) {
+            // Floor division: the remainders are in [0, b) and [0, d). Computing the remainder
+            // with % rather than a - q * b avoids an overflow for large negative values.
+            $remainderA = $a % $b;
+            $remainderC = $c % $d;
+            $quotientA = intdiv($a, $b) - ($remainderA < 0 ? 1 : 0);
+            $quotientC = intdiv($c, $d) - ($remainderC < 0 ? 1 : 0);
+            if ($remainderA < 0) {
+                $remainderA += $b;
+            }
+            if ($remainderC < 0) {
+                $remainderC += $d;
+            }
+
+            if ($quotientA !== $quotientC) {
+                return $sign * ($quotientA <=> $quotientC);
+            }
+            if ($remainderA === 0 || $remainderC === 0) {
+                return $sign * ($remainderA <=> $remainderC);
+            }
+
+            // rA/b < rC/d  <=>  b/rA > d/rC: compare the inverted remainders, with the sign flipped.
+            [$a, $b, $c, $d] = [$b, $remainderA, $d, $remainderC];
+            $sign = -$sign;
+        }
+    }
+
+    /**
+     * Check whether $a * $b fits in an int (|a * b| <= PHP_INT_MAX).
+     */
+    private static function productFits(int $a, int $b): bool
+    {
+        // intdiv() keeps the bound exact: a float division rounds it up (PHP_INT_MAX / 2 gives 2^62).
+        return $a === 0 || $b === 0 || abs($a) <= intdiv(PHP_INT_MAX, abs($b));
     }
 
     /**
@@ -827,14 +883,7 @@ final readonly class RationalNumber implements ArithmeticOperations, Comparable,
      */
     private static function checkMultiplicationOverflow(int $a, int $b, string $operation): void
     {
-        // Zero is always safe
-        if ($a === 0 || $b === 0) {
-            return;
-        }
-
-        // |a * b| > PHP_INT_MAX  <=>  |a| > floor(PHP_INT_MAX / |b|). intdiv() keeps the bound exact:
-        // a float division rounds it up (PHP_INT_MAX / 2 gives 2^62) and lets 2^62 * 2 through.
-        if (abs($a) > intdiv(PHP_INT_MAX, abs($b))) {
+        if (!self::productFits($a, $b)) {
             throw IntegerOverflowException::create(
                 sprintf("Operation would cause integer overflow during %s.", $operation)
             );
