@@ -465,4 +465,14 @@ class RationalNumberTest extends TestCase
         $this->assertEquals("1/1", $one->toString());
         $this->assertEqualsWithDelta(1, $one->getFloat(), 1e-12);
     }
+
+    public function testPropertiesAreReadonly(): void
+    {
+        $number = new RationalNumber(1, 2);
+        $property = new \ReflectionProperty($number, 'numerator');
+
+        $this->assertTrue($property->isReadOnly());
+        $this->expectException(\Error::class);
+        $property->setValue($number, 3);
+    }
 }

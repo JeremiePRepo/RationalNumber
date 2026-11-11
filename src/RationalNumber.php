@@ -10,29 +10,15 @@ use RationalNumber\Contract\NumericValue;
 use RationalNumber\Exception\DivisionByZeroException;
 use RationalNumber\Exception\IntegerOverflowException;
 use RationalNumber\Exception\InvalidArgumentException;
+use RationalNumber\Internal\DecimalParser;
 
 /**
  * Represents an immutable rational number (fraction) with precise arithmetic operations.
  *
  * Implements JsonSerializable for seamless JSON encoding/decoding support.
  */
-final class RationalNumber implements ArithmeticOperations, Comparable, NumericValue, \JsonSerializable
+final readonly class RationalNumber implements ArithmeticOperations, Comparable, NumericValue, \JsonSerializable
 {
-    /**
-     * Decimal digits of PHP_INT_MAX, used for exact overflow checks on digit strings.
-     */
-    private const INT_MAX_DIGITS = PHP_INT_MAX . '';
-
-    /**
-     * Largest power of ten that fits in a 64-bit integer (10^18).
-     */
-    private const MAX_POWER_OF_TEN = 18;
-
-    /**
-     * Floats below 2^53 in absolute value that have no fractional part are exact integers.
-     */
-    private const MAX_EXACT_FLOAT_INTEGER = 9007199254740992.0;
-
     private int $numerator;
     private int $denominator;
 
@@ -48,10 +34,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
             throw new InvalidArgumentException("Denominator cannot be zero.");
         }
 
-        $this->numerator = $numerator;
-        $this->denominator = $denominator;
-        // Normalize to ensure the denominator is positive.
-        $this->normalize();
+        [$this->numerator, $this->denominator] = self::normalize($numerator, $denominator);
     }
 
     /**
@@ -80,31 +63,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
             throw new InvalidArgumentException("Cannot create RationalNumber from INF or NAN.");
         }
 
-        // Fast path for the common case of integral floats (e.g. 100.0, -0.0).
-        if (abs($value) < self::MAX_EXACT_FLOAT_INTEGER && $value === floor($value)) {
-            return new self((int) $value, 1);
-        }
-
-        // var_export() follows serialize_precision; -1 gives the shortest round-trip representation.
-        // It is already -1 by default, so the setting is only switched when needed.
-        $previousPrecision = ini_get('serialize_precision');
-        $switchPrecision = $previousPrecision !== '-1' && $previousPrecision !== false;
-        if ($switchPrecision) {
-            ini_set('serialize_precision', '-1');
-        }
-        try {
-            $representation = var_export($value, true);
-        } finally {
-            if ($switchPrecision) {
-                ini_set('serialize_precision', $previousPrecision);
-            }
-        }
-
-        [$sign, $digits, $exponent] = self::parseDecimal($representation)
-            ?? throw new \LogicException("Unexpected float representation '{$representation}'.");
-        [$digits, $exponent] = self::roundDecimalToFit($digits, $exponent);
-
-        return self::fromDecimalParts($sign, $digits, $exponent);
+        return new self(...DecimalParser::fromFloat($value));
     }
 
     /**
@@ -134,13 +93,13 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
             $denominatorStr = $matches[2];
 
             // Validate for integer overflow before converting to int (exact check on the digits)
-            if (!self::fitsInInt(ltrim($numeratorStr, '+-0'))) {
+            if (!DecimalParser::fitsInInt(ltrim($numeratorStr, '+-0'))) {
                 throw new IntegerOverflowException(
                     "Integer overflow in fraction string '{$input}'. Numerator exceeds PHP_INT_MAX."
                 );
             }
 
-            if (!self::fitsInInt(ltrim($denominatorStr, '+-0'))) {
+            if (!DecimalParser::fitsInInt(ltrim($denominatorStr, '+-0'))) {
                 throw new IntegerOverflowException(
                     "Integer overflow in fraction string '{$input}'. Denominator exceeds PHP_INT_MAX."
                 );
@@ -155,9 +114,9 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
 
         // Try to parse as an exact decimal (decimal, integer, or scientific notation),
         // without going through a float.
-        $parts = self::parseDecimal($input);
-        if ($parts !== null) {
-            return self::fromDecimalParts(...$parts);
+        $fraction = DecimalParser::parse($input);
+        if ($fraction !== null) {
+            return new self(...$fraction);
         }
 
         // Invalid format
@@ -662,7 +621,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
      */
     public function reduce(): RationalNumber
     {
-        $gcd = $this->gcd($this->numerator, $this->denominator);
+        $gcd = self::gcd($this->numerator, $this->denominator);
         $newNumerator = $this->numerator / $gcd;
         $newDenominator = $this->denominator / $gcd;
         return new RationalNumber((int)$newNumerator, (int)$newDenominator);
@@ -798,11 +757,11 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
      * @param int $b The second integer.
      * @return int The GCD of the two integers.
      */
-    private function gcd(int $a, int $b): int
+    private static function gcd(int $a, int $b): int
     {
         $a = abs($a);
         $b = abs($b);
-        return ($b === 0) ? $a : $this->gcd($b, $a % $b);
+        return ($b === 0) ? $a : self::gcd($b, $a % $b);
     }
 
     /**
@@ -834,139 +793,24 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
     }
 
     /**
-     * Split a decimal string (e.g. "-12.50", ".5", "1.5e-3", "1.0E+25") into an exact
-     * sign / significant digits / base-10 exponent triple, without using floats.
+     * Normalize a fraction to its simplest form: reduce it by the greatest common divisor (GCD)
+     * and make the denominator positive.
      *
-     * The value is $sign * $digits * 10^$exponent. Leading and trailing zeros are removed
-     * from $digits (an empty $digits means zero).
-     *
-     * @param string $input The decimal string to parse.
-     * @return array{int, string, int}|null [sign, digits, exponent], or null if the format is invalid.
+     * @return array{int, int} [numerator, denominator]
      */
-    private static function parseDecimal(string $input): ?array
+    private static function normalize(int $numerator, int $denominator): array
     {
-        if (!preg_match('/^([+-]?)(\d*)(?:\.(\d*))?(?:[eE]([+-]?\d+))?$/', $input, $matches)) {
-            return null;
+        if ($denominator < 0) {
+            $numerator = -$numerator;
+            $denominator = -$denominator;
         }
 
-        $integerPart = $matches[2];
-        $fractionalPart = $matches[3] ?? '';
-        $exponentPart = $matches[4] ?? '';
-
-        // At least one digit is required in the mantissa ("." or "e5" are invalid).
-        if ($integerPart === '' && $fractionalPart === '') {
-            return null;
-        }
-
-        $sign = $matches[1] === '-' ? -1 : 1;
-
-        // Clamp absurd exponents so the arithmetic below stays in integer range;
-        // any value this large or small overflows anyway (or is zero).
-        // (int) saturates at PHP_INT_MAX / PHP_INT_MIN for oversized digit strings.
-        $exponent = max(-1000000, min(1000000, (int) $exponentPart));
-
-        $digits = ltrim($integerPart . $fractionalPart, '0');
-        $exponent -= strlen($fractionalPart);
-
-        // Trailing zeros only scale the value: move them into the exponent.
-        $trimmedDigits = rtrim($digits, '0');
-        $exponent += strlen($digits) - strlen($trimmedDigits);
-
-        return [$sign, $trimmedDigits, $exponent];
-    }
-
-    /**
-     * Build a RationalNumber from the exact decimal parts returned by parseDecimal().
-     *
-     * @param int $sign 1 or -1.
-     * @param string $digits Significant digits without leading zeros ('' means zero).
-     * @param int $exponent Base-10 exponent applied to $digits.
-     * @return RationalNumber The resulting rational number.
-     * @throws IntegerOverflowException if the value cannot be represented exactly with 64-bit integers.
-     */
-    private static function fromDecimalParts(int $sign, string $digits, int $exponent): RationalNumber
-    {
-        if ($digits === '') {
-            return self::zero();
-        }
-
-        if ($exponent >= 0) {
-            // Integer value: digits followed by $exponent zeros (short-circuit before building huge strings).
-            if (strlen($digits) + $exponent > strlen(self::INT_MAX_DIGITS)
-                || !self::fitsInInt($integerDigits = $digits . str_repeat('0', $exponent))
-            ) {
-                throw IntegerOverflowException::create(
-                    "Integer overflow: the value is too large for integer representation."
-                );
-            }
-
-            return new self($sign * (int) $integerDigits, 1);
-        }
-
-        if (-$exponent > self::MAX_POWER_OF_TEN || !self::fitsInInt($digits)) {
-            throw IntegerOverflowException::create(
-                "Integer overflow: the value has too many digits to be represented exactly."
-            );
-        }
-
-        return new self($sign * (int) $digits, 10 ** -$exponent);
-    }
-
-    /**
-     * Round decimal parts (half up) to the largest number of significant digits for which both the
-     * numerator and the denominator fit in a 64-bit integer. Parts that already fit are unchanged.
-     *
-     * @param string $digits Significant digits without leading zeros.
-     * @param int $exponent Base-10 exponent applied to $digits.
-     * @return array{string, int} [digits, exponent]
-     * @throws IntegerOverflowException if the value would become zero.
-     */
-    private static function roundDecimalToFit(string $digits, int $exponent): array
-    {
-        // Up to 18 digits always fit, and the denominator 10^-exponent fits up to 10^18.
-        if ($exponent >= 0 || (-$exponent <= self::MAX_POWER_OF_TEN && strlen($digits) <= self::MAX_POWER_OF_TEN)) {
-            return [$digits, $exponent];
-        }
-
-        $dropped = max(-$exponent, strlen($digits)) - self::MAX_POWER_OF_TEN;
-        $rounded = (int) substr($digits, 0, -$dropped) + (($digits[-$dropped] ?? '0') >= '5' ? 1 : 0);
-        if ($rounded === 0) {
-            throw new IntegerOverflowException(
-                "Integer overflow: the value is too small to be represented without becoming zero."
-            );
-        }
-
-        return [(string) $rounded, $exponent + $dropped];
-    }
-
-    /**
-     * Check whether a string of decimal digits (no sign) fits in a PHP integer.
-     */
-    private static function fitsInInt(string $digits): bool
-    {
-        $length = strlen($digits);
-        $maxLength = strlen(self::INT_MAX_DIGITS);
-
-        return $length < $maxLength || ($length === $maxLength && strcmp($digits, self::INT_MAX_DIGITS) <= 0);
-    }
-
-    /**
-     * Normalize the rational number to its simplest form by reducing the numerator and denominator
-     * using their greatest common divisor (GCD), and ensuring the denominator is always positive.
-     */
-    private function normalize(): void
-    {
-        // Ensure denominator is always positive
-        if ($this->denominator < 0) {
-            $this->numerator = -$this->numerator;
-            $this->denominator = -$this->denominator;
-        }
-
-        // Reduce to simplest form
-        $gcd = $this->gcd($this->numerator, $this->denominator);
+        $gcd = self::gcd($numerator, $denominator);
         if ($gcd !== 1) {
-            $this->numerator = (int)($this->numerator / $gcd);
-            $this->denominator = (int)($this->denominator / $gcd);
+            $numerator = intdiv($numerator, $gcd);
+            $denominator = intdiv($denominator, $gcd);
         }
+
+        return [$numerator, $denominator];
     }
 }
