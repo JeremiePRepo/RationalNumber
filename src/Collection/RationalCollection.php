@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace RationalNumber\Collection;
 
-use InvalidArgumentException;
+use RationalNumber\Exception\EmptyCollectionException;
+use RationalNumber\Exception\InvalidArgumentException;
 use RationalNumber\RationalNumber;
 
 /**
@@ -98,12 +99,12 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
      * Calculate the average of all RationalNumbers in the collection.
      *
      * @return RationalNumber The average of all numbers.
-     * @throws InvalidArgumentException if the collection is empty.
+     * @throws EmptyCollectionException if the collection is empty.
      */
     public function average(): RationalNumber
     {
         if (empty($this->numbers)) {
-            throw new InvalidArgumentException("Cannot calculate average of an empty collection.");
+            throw new EmptyCollectionException("Cannot calculate average of an empty collection.");
         }
 
         $count = RationalNumber::fromFloat(count($this->numbers));
@@ -114,12 +115,12 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
      * Find the minimum value in the collection.
      *
      * @return RationalNumber The smallest RationalNumber in the collection.
-     * @throws InvalidArgumentException if the collection is empty.
+     * @throws EmptyCollectionException if the collection is empty.
      */
     public function min(): RationalNumber
     {
         if (empty($this->numbers)) {
-            throw new InvalidArgumentException("Cannot find minimum of an empty collection.");
+            throw new EmptyCollectionException("Cannot find minimum of an empty collection.");
         }
 
         return array_reduce(
@@ -133,12 +134,12 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
      * Find the maximum value in the collection.
      *
      * @return RationalNumber The largest RationalNumber in the collection.
-     * @throws InvalidArgumentException if the collection is empty.
+     * @throws EmptyCollectionException if the collection is empty.
      */
     public function max(): RationalNumber
     {
         if (empty($this->numbers)) {
-            throw new InvalidArgumentException("Cannot find maximum of an empty collection.");
+            throw new EmptyCollectionException("Cannot find maximum of an empty collection.");
         }
 
         return array_reduce(

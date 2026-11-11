@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace RationalNumber\Calculator;
 
+use RationalNumber\Exception\DivisionByZeroException;
 use RationalNumber\RationalNumber;
 
 /**
@@ -107,7 +108,7 @@ class PercentageCalculator
         );
 
         if ($whole->isZero()) {
-            throw new \InvalidArgumentException("Cannot calculate percentage of zero.");
+            throw new DivisionByZeroException("Cannot calculate percentage of zero.");
         }
 
         $ratio = $part->divideBy($whole);

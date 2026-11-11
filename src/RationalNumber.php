@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace RationalNumber;
 
-use InvalidArgumentException;
 use RationalNumber\Contract\ArithmeticOperations;
 use RationalNumber\Contract\Comparable;
 use RationalNumber\Contract\NumericValue;
+use RationalNumber\Exception\DivisionByZeroException;
+use RationalNumber\Exception\IntegerOverflowException;
+use RationalNumber\Exception\InvalidArgumentException;
 
 /**
  * Represents an immutable rational number (fraction) with precise arithmetic operations.
@@ -65,7 +67,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
      * @param float|int $value The scalar value to create a RationalNumber object from.
      * @return RationalNumber The RationalNumber object created from the scalar value.
      * @throws InvalidArgumentException if the value is INF or NAN.
-     * @throws \ArithmeticError if the value is too large, or too small to be represented without becoming zero.
+     * @throws IntegerOverflowException if the value is too large, or too small to be represented without becoming zero.
      */
     public static function fromFloat($value): RationalNumber
     {
@@ -114,7 +116,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
      * @param string $input The string to parse into a RationalNumber.
      * @return RationalNumber The RationalNumber object created from the string.
      * @throws InvalidArgumentException if the string format is invalid or empty.
-     * @throws \ArithmeticError if the conversion would cause integer overflow.
+     * @throws IntegerOverflowException if the conversion would cause integer overflow.
      */
     public static function fromString(string $input): RationalNumber
     {
@@ -133,13 +135,13 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
 
             // Validate for integer overflow before converting to int (exact check on the digits)
             if (!self::fitsInInt(ltrim($numeratorStr, '+-0'))) {
-                throw new \ArithmeticError(
+                throw new IntegerOverflowException(
                     "Integer overflow in fraction string '{$input}'. Numerator exceeds PHP_INT_MAX."
                 );
             }
 
             if (!self::fitsInInt(ltrim($denominatorStr, '+-0'))) {
-                throw new \ArithmeticError(
+                throw new IntegerOverflowException(
                     "Integer overflow in fraction string '{$input}'. Denominator exceeds PHP_INT_MAX."
                 );
             }
@@ -177,7 +179,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
      * Multiply the current rational number by another RationalNumber object.
      * @param ArithmeticOperations $number The RationalNumber object to multiply with.
      * @return RationalNumber The result of the multiplication as a new RationalNumber object.
-     * @throws \ArithmeticError if the operation would cause integer overflow.
+     * @throws IntegerOverflowException if the operation would cause integer overflow.
      */
     public function multiply(ArithmeticOperations $number): RationalNumber
     {
@@ -198,7 +200,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
      * Add the current rational number to another RationalNumber object.
      * @param ArithmeticOperations $number The RationalNumber object to add.
      * @return RationalNumber The result of the addition as a new RationalNumber object.
-     * @throws \ArithmeticError if the operation would cause integer overflow.
+     * @throws IntegerOverflowException if the operation would cause integer overflow.
      */
     public function add(ArithmeticOperations $number): RationalNumber
     {
@@ -223,7 +225,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
      * Subtract another RationalNumber object from the current rational number.
      * @param ArithmeticOperations $number The RationalNumber object to subtract.
      * @return RationalNumber The result of the subtraction as a new RationalNumber object.
-     * @throws \ArithmeticError if the operation would cause integer overflow.
+     * @throws IntegerOverflowException if the operation would cause integer overflow.
      */
     public function subtract(ArithmeticOperations $number): RationalNumber
     {
@@ -248,7 +250,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
      * Divide the current rational number by another RationalNumber object.
      * @param ArithmeticOperations $number The RationalNumber object to divide by.
      * @return RationalNumber The result of the division as a new RationalNumber object.
-     * @throws InvalidArgumentException if dividing by zero.
+     * @throws DivisionByZeroException if dividing by zero.
      */
     public function divideBy(ArithmeticOperations $number): RationalNumber
     {
@@ -256,7 +258,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
             throw new InvalidArgumentException("Must be a RationalNumber instance.");
         }
         if ($number->isZero()) {
-            throw new InvalidArgumentException("Cannot divide by zero.");
+            throw new DivisionByZeroException("Cannot divide by zero.");
         }
         // To divide by a number, we multiply by its reciprocal.
         $reciprocal = $number->reciprocal();
@@ -281,7 +283,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
      *
      * @param ArithmeticOperations $number The dividend (the number to be divided).
      * @return RationalNumber The result of $number / $this as a new RationalNumber object.
-     * @throws InvalidArgumentException if the current instance is zero (division by zero).
+     * @throws DivisionByZeroException if the current instance is zero (division by zero).
      */
     public function divideFrom(ArithmeticOperations $number): RationalNumber
     {
@@ -289,7 +291,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
             throw new InvalidArgumentException("Must be a RationalNumber instance.");
         }
         if ($this->isZero()) {
-            throw new InvalidArgumentException("Cannot divide by zero.");
+            throw new DivisionByZeroException("Cannot divide by zero.");
         }
         // To divide a number by this rational number, we multiply it by this number's reciprocal.
         $reciprocal = $this->reciprocal();
@@ -316,7 +318,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
      * @param string $percentage The percentage value as a string (e.g., "50%").
      * @return RationalNumber The RationalNumber object created from the percentage value.
      * @throws InvalidArgumentException if the value is not a valid number.
-     * @throws \ArithmeticError if the conversion would cause integer overflow.
+     * @throws IntegerOverflowException if the conversion would cause integer overflow.
      */
     public static function fromPercentage(string $percentage): RationalNumber
     {
@@ -496,12 +498,12 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
     /**
      * Get the reciprocal of the rational number.
      * @return RationalNumber The reciprocal of the rational number as a new RationalNumber object.
-     * @throws InvalidArgumentException if the numerator is zero.
+     * @throws DivisionByZeroException if the numerator is zero.
      */
     public function reciprocal(): RationalNumber
     {
         if ($this->numerator === 0) {
-            throw new InvalidArgumentException("Cannot get reciprocal of zero.");
+            throw new DivisionByZeroException("Cannot get reciprocal of zero.");
         }
         return new RationalNumber($this->denominator, $this->numerator);
     }
@@ -514,7 +516,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
      *
      * @param int $exponent The integer exponent to raise to.
      * @return RationalNumber The result of the exponentiation as a new RationalNumber object.
-     * @throws \ArithmeticError if the operation would cause integer overflow.
+     * @throws IntegerOverflowException if the operation would cause integer overflow.
      */
     public function pow(int $exponent): RationalNumber
     {
@@ -798,7 +800,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
      * @param int $b The second operand.
      * @param string $operation A description of the operation for error message context.
      * @return void
-     * @throws \ArithmeticError if the multiplication would overflow.
+     * @throws IntegerOverflowException if the multiplication would overflow.
      */
     private function checkMultiplicationOverflow(int $a, int $b, string $operation): void
     {
@@ -813,9 +815,9 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
         $absB = abs($b);
 
         if ($absA > PHP_INT_MAX / $absB) {
-            throw new \ArithmeticError(self::overflowMessage(
+            throw IntegerOverflowException::create(
                 sprintf("Operation would cause integer overflow during %s.", $operation)
-            ));
+            );
         }
     }
 
@@ -868,7 +870,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
      * @param string $digits Significant digits without leading zeros ('' means zero).
      * @param int $exponent Base-10 exponent applied to $digits.
      * @return RationalNumber The resulting rational number.
-     * @throws \ArithmeticError if the value cannot be represented exactly with 64-bit integers.
+     * @throws IntegerOverflowException if the value cannot be represented exactly with 64-bit integers.
      */
     private static function fromDecimalParts(int $sign, string $digits, int $exponent): RationalNumber
     {
@@ -881,18 +883,18 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
             if (strlen($digits) + $exponent > strlen(self::INT_MAX_DIGITS)
                 || !self::fitsInInt($integerDigits = $digits . str_repeat('0', $exponent))
             ) {
-                throw new \ArithmeticError(self::overflowMessage(
+                throw IntegerOverflowException::create(
                     "Integer overflow: the value is too large for integer representation."
-                ));
+                );
             }
 
             return new self($sign * (int) $integerDigits, 1);
         }
 
         if (-$exponent > self::MAX_POWER_OF_TEN || !self::fitsInInt($digits)) {
-            throw new \ArithmeticError(self::overflowMessage(
+            throw IntegerOverflowException::create(
                 "Integer overflow: the value has too many digits to be represented exactly."
-            ));
+            );
         }
 
         return new self($sign * (int) $digits, 10 ** -$exponent);
@@ -905,7 +907,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
      * @param string $digits Significant digits without leading zeros.
      * @param int $exponent Base-10 exponent applied to $digits.
      * @return array{string, int} [digits, exponent]
-     * @throws \ArithmeticError if the value would become zero.
+     * @throws IntegerOverflowException if the value would become zero.
      */
     private static function roundDecimalToFit(string $digits, int $exponent): array
     {
@@ -917,7 +919,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
         $dropped = max(-$exponent, strlen($digits)) - self::MAX_POWER_OF_TEN;
         $rounded = (int) substr($digits, 0, -$dropped) + (($digits[-$dropped] ?? '0') >= '5' ? 1 : 0);
         if ($rounded === 0) {
-            throw new \ArithmeticError(
+            throw new IntegerOverflowException(
                 "Integer overflow: the value is too small to be represented without becoming zero."
             );
         }
@@ -934,16 +936,6 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
         $maxLength = strlen(self::INT_MAX_DIGITS);
 
         return $length < $maxLength || ($length === $maxLength && strcmp($digits, self::INT_MAX_DIGITS) <= 0);
-    }
-
-    /**
-     * Append the GMP hint to an overflow message.
-     */
-    private static function overflowMessage(string $message): string
-    {
-        return $message . ' ' . (extension_loaded('gmp')
-            ? "Consider using the GMP extension for arbitrary precision arithmetic."
-            : "Consider installing the GMP extension for handling larger numbers.");
     }
 
     /**
