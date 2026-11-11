@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace RationalNumber\Tests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use RationalNumber\Exception\IntegerOverflowException;
 use RationalNumber\RationalNumber;
 use InvalidArgumentException;
 
@@ -426,6 +428,36 @@ class PHP83EdgeCasesTest extends TestCase
         $this->expectExceptionMessage('Operation would cause integer overflow during subtraction.');
 
         (new RationalNumber(-PHP_INT_MAX))->subtract(new RationalNumber(2));
+    }
+
+    /**
+     * Products just above PHP_INT_MAX, where a float bound (PHP_INT_MAX / 2 = 2^62) is not exact.
+     *
+     * @return iterable<string, array{callable(): mixed}>
+     */
+    public static function productJustAboveIntMaxProvider(): iterable
+    {
+        yield 'multiply 2^62 by 2' => [fn () => (new RationalNumber(2 ** 62))->multiply(new RationalNumber(2))];
+        yield 'multiply -2^62 by 2' => [fn () => (new RationalNumber(-(2 ** 62)))->multiply(new RationalNumber(2))];
+        yield 'add 1/2 to 2^62' => [fn () => (new RationalNumber(2 ** 62))->add(new RationalNumber(1, 2))];
+        yield 'subtract 1/2 from 2^62' => [fn () => (new RationalNumber(2 ** 62))->subtract(new RationalNumber(1, 2))];
+        yield 'pow 2^32 squared' => [fn () => (new RationalNumber(2 ** 32))->pow(2)];
+    }
+
+    #[DataProvider('productJustAboveIntMaxProvider')]
+    public function testProductJustAboveIntMaxThrowsOverflow(callable $operation): void
+    {
+        $this->expectException(IntegerOverflowException::class);
+
+        $operation();
+    }
+
+    public function testLargestProductThatFitsDoesNotOverflow(): void
+    {
+        // 3 * 3074457345618258602 = 9223372036854775806 = PHP_INT_MAX - 1
+        $product = (new RationalNumber(3074457345618258602))->multiply(new RationalNumber(3));
+
+        $this->assertSame(PHP_INT_MAX - 1, $product->getNumerator());
     }
 
     public function testAdditionAtIntegerLimitsDoesNotOverflow(): void

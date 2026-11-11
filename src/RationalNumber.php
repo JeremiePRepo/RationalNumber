@@ -802,12 +802,9 @@ final readonly class RationalNumber implements ArithmeticOperations, Comparable,
             return;
         }
 
-        // Check if the result would exceed PHP_INT_MAX or go below PHP_INT_MIN
-        // Use division to check: if a * b would overflow, then |a| > PHP_INT_MAX / |b|
-        $absA = abs($a);
-        $absB = abs($b);
-
-        if ($absA > PHP_INT_MAX / $absB) {
+        // |a * b| > PHP_INT_MAX  <=>  |a| > floor(PHP_INT_MAX / |b|). intdiv() keeps the bound exact:
+        // a float division rounds it up (PHP_INT_MAX / 2 gives 2^62) and lets 2^62 * 2 through.
+        if (abs($a) > intdiv(PHP_INT_MAX, abs($b))) {
             throw IntegerOverflowException::create(
                 sprintf("Operation would cause integer overflow during %s.", $operation)
             );
