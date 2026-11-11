@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace RationalNumber\Tests;
 
-use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use PHPUnit\Framework\TestCase;
-use RationalNumber\RationalNumber;
 use RationalNumber\Collection\RationalCollection;
+use RationalNumber\Exception\ImmutableCollectionException;
+use RationalNumber\Exception\RationalNumberException;
+use RationalNumber\RationalNumber;
 use InvalidArgumentException;
 
 /**
@@ -51,8 +51,20 @@ class CollectionTest extends TestCase
 
         $result = $collection->add($number);
 
-        $this->assertSame($collection, $result);  // Fluent interface
-        $this->assertCount(1, $collection);
+        // Immutable: add() returns a new collection and leaves the original unchanged.
+        $this->assertNotSame($collection, $result);
+        $this->assertCount(0, $collection);
+        $this->assertCount(1, $result);
+        $this->assertSame($number, $result[0]);
+    }
+
+    public function testAddCanBeChained(): void
+    {
+        $collection = (new RationalCollection())
+            ->add(RationalNumber::fromFloat(1))
+            ->add(RationalNumber::fromFloat(2));
+
+        $this->assertSame('3/1', $collection->sum()->toString());
     }
 
     public function testGetByIndex(): void
@@ -301,172 +313,75 @@ class CollectionTest extends TestCase
         $this->assertEqualsWithDelta(20.0, $collection[1]->getFloat(), 1e-12);
     }
 
-    #[IgnoreDeprecations]
-    public function testOffsetSet(): void
+    public function testOffsetSetThrows(): void
     {
-        $this->expectUserDeprecationMessageMatches('/\$collection\[\] = .* is deprecated since 2\.11.*->add\(\$number\)/');
-        $collection = new RationalCollection();
+        $collection = new RationalCollection([RationalNumber::fromFloat(1)]);
+
+        $this->expectException(ImmutableCollectionException::class);
+        $this->expectExceptionMessage('$collection = $collection->add($number)');
+
         $collection[] = RationalNumber::fromFloat(5);
-        $collection[1] = RationalNumber::fromFloat(10);
-
-        $this->assertCount(2, $collection);
-        $this->assertEqualsWithDelta(5.0, $collection[0]->getFloat(), 1e-12);
-        $this->assertEqualsWithDelta(10.0, $collection[1]->getFloat(), 1e-12);
     }
 
-    #[IgnoreDeprecations]
-    public function testOffsetSetInvalidType(): void
+    public function testOffsetSetAtAnIndexThrows(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage("Value must be a RationalNumber instance");
+        $collection = new RationalCollection([RationalNumber::fromFloat(1)]);
 
-        $collection = new RationalCollection();
-        $collection[] = "not a rational number";
-    }
-
-    #[IgnoreDeprecations]
-    public function testOffsetUnset(): void
-    {
-        $this->expectUserDeprecationMessageMatches('/unset\(\$collection\[\$i\]\) is deprecated since 2\.11.*filter\(\)/');
-        $collection = new RationalCollection([
-            RationalNumber::fromFloat(1),
-            RationalNumber::fromFloat(2),
-            RationalNumber::fromFloat(3)
-        ]);
-
-        unset($collection[1]);
-
-        // The other elements keep their index (2.10 behaviour).
-        $this->assertCount(2, $collection);
-        $this->assertFalse(isset($collection[1]));
-        $this->assertSame('3/1', $collection[2]->toString());
-        $this->assertSame([0, 2], array_keys($collection->toArray()));
-    }
-
-    #[IgnoreDeprecations]
-    public function testUnsetWhileIteratingRemovesTheExpectedElements(): void
-    {
-        $collection = new RationalCollection([
-            RationalNumber::fromFloat(1),
-            RationalNumber::fromFloat(2),
-            RationalNumber::fromFloat(3),
-            RationalNumber::fromFloat(4),
-        ]);
-
-        foreach ($collection as $index => $number) {
-            if ($number->getNumerator() % 2 === 1) {
-                unset($collection[$index]);
-            }
+        try {
+            $collection[0] = RationalNumber::fromFloat(5);
+            $this->fail('Expected ImmutableCollectionException.');
+        } catch (ImmutableCollectionException $e) {
+            $this->assertInstanceOf(RationalNumberException::class, $e);
+            $this->assertInstanceOf(\LogicException::class, $e);
         }
 
-        $this->assertSame(['2/1', '4/1'], array_map(fn ($n) => $n->toString(), array_values($collection->toArray())));
+        $this->assertSame('1/1', $collection[0]->toString());
     }
 
-    #[IgnoreDeprecations]
-    public function testUnsetEveryElementWhileIterating(): void
+    public function testOffsetUnsetThrows(): void
     {
-        $collection = new RationalCollection([
-            RationalNumber::fromFloat(1),
-            RationalNumber::fromFloat(2),
-            RationalNumber::fromFloat(3),
-        ]);
+        $collection = new RationalCollection([RationalNumber::fromFloat(1)]);
 
-        foreach ($collection as $index => $number) {
-            unset($collection[$index]);
-        }
-
-        $this->assertCount(0, $collection);
-    }
-
-    #[IgnoreDeprecations]
-    public function testMinAndMaxAfterUnsettingTheFirstElement(): void
-    {
-        $collection = new RationalCollection([
-            RationalNumber::fromFloat(1),
-            RationalNumber::fromFloat(5),
-            RationalNumber::fromFloat(3)
-        ]);
+        $this->expectException(ImmutableCollectionException::class);
+        $this->expectExceptionMessage('$collection = $collection->filter(...)');
 
         unset($collection[0]);
-
-        $this->assertSame('3/1', $collection->min()->toString());
-        $this->assertSame('5/1', $collection->max()->toString());
     }
 
-    #[IgnoreDeprecations]
-    public function testOffsetSetReplacesAnExistingElement(): void
+    public function testConstructorRejectsNonRationalElements(): void
     {
-        $collection = new RationalCollection([RationalNumber::fromFloat(1), RationalNumber::fromFloat(2)]);
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Value must be a RationalNumber instance.');
 
-        $collection[0] = RationalNumber::fromFloat(7);
-
-        $this->assertCount(2, $collection);
-        $this->assertSame('7/1', $collection[0]->toString());
+        new RationalCollection([RationalNumber::fromFloat(1), 'not a rational number']);
     }
 
-    #[IgnoreDeprecations]
-    public function testOffsetSetAcceptsIntegerStrings(): void
+    public function testConstructorReindexesElements(): void
     {
-        $collection = new RationalCollection([RationalNumber::fromFloat(1), RationalNumber::fromFloat(2)]);
+        $collection = new RationalCollection([5 => RationalNumber::fromFloat(1), 'a' => RationalNumber::fromFloat(2)]);
 
-        $collection['1'] = RationalNumber::fromFloat(9);
-        $collection['2'] = RationalNumber::fromFloat(3);
+        $this->assertSame([0, 1], array_keys($collection->toArray()));
+        $this->assertSame('1/1', $collection->min()->toString());
+    }
 
+    public function testFilterReindexes(): void
+    {
+        $collection = new RationalCollection([
+            RationalNumber::fromFloat(1),
+            RationalNumber::fromFloat(2),
+            RationalNumber::fromFloat(3),
+        ]);
+
+        $odd = $collection->filter(fn (RationalNumber $n) => $n->getNumerator() % 2 === 1);
+
+        $this->assertSame([0, 1], array_keys($odd->toArray()));
+        $this->assertSame('3/1', $odd[1]->toString());
         $this->assertCount(3, $collection);
-        $this->assertSame('9/1', $collection[1]->toString());
-        $this->assertSame('3/1', $collection[2]->toString());
     }
 
-    #[IgnoreDeprecations]
-    public function testOffsetSetAfterUnsetUsesTheNextIndex(): void
+    public function testPropertiesAreReadonly(): void
     {
-        $collection = new RationalCollection([RationalNumber::fromFloat(1), RationalNumber::fromFloat(2)]);
-        unset($collection[0]);
-
-        $collection[2] = RationalNumber::fromFloat(3);
-
-        $this->assertSame([1, 2], array_keys($collection->toArray()));
-    }
-
-    /**
-     * @return iterable<string, array{mixed}>
-     */
-    public static function invalidStringKeyProvider(): iterable
-    {
-        yield 'text' => ['price'];
-        yield 'leading zero' => ['01'];
-        yield 'negative string' => ['-1'];
-        yield 'decimal string' => ['1.5'];
-    }
-
-    #[IgnoreDeprecations]
-    #[DataProvider('invalidStringKeyProvider')]
-    public function testOffsetSetRejectsStringKeys(string $offset): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Offset must be an existing index or the next index (1).');
-
-        $collection = new RationalCollection([RationalNumber::fromFloat(1)]);
-        $collection[$offset] = RationalNumber::fromFloat(5);
-    }
-
-    #[IgnoreDeprecations]
-    public function testOffsetSetRejectsIndexesThatWouldLeaveAGap(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Offset must be an existing index or the next index (1).');
-
-        $collection = new RationalCollection([RationalNumber::fromFloat(1)]);
-        $collection[5] = RationalNumber::fromFloat(5);
-    }
-
-    #[IgnoreDeprecations]
-    public function testOffsetSetRejectsNegativeIndexes(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-
-        $collection = new RationalCollection([RationalNumber::fromFloat(1)]);
-        $collection[-1] = RationalNumber::fromFloat(5);
+        $this->assertTrue((new \ReflectionClass(RationalCollection::class))->isReadOnly());
     }
 
     // ========== Utility Methods Tests ==========
@@ -484,24 +399,6 @@ class CollectionTest extends TestCase
         $this->assertIsArray($array);
         $this->assertCount(2, $array);
         $this->assertInstanceOf(RationalNumber::class, $array[0]);
-    }
-
-    #[IgnoreDeprecations]
-    public function testClearMethod(): void
-    {
-        $this->expectUserDeprecationMessageMatches('/clear\(\) is deprecated since 2\.11.*new RationalCollection\(\)/');
-        $collection = new RationalCollection([
-            RationalNumber::fromFloat(1),
-            RationalNumber::fromFloat(2)
-        ]);
-
-        $this->assertCount(2, $collection);
-
-        $result = $collection->clear();
-
-        $this->assertSame($collection, $result);  // Fluent interface
-        $this->assertCount(0, $collection);
-        $this->assertTrue($collection->isEmpty());
     }
 
     // ========== Integration Tests ==========

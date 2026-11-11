@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace RationalNumber\Collection;
 
 use RationalNumber\Exception\EmptyCollectionException;
+use RationalNumber\Exception\ImmutableCollectionException;
 use RationalNumber\Exception\InvalidArgumentException;
-use RationalNumber\Internal\Deprecation;
 use RationalNumber\RationalNumber;
 
 /**
@@ -27,45 +27,48 @@ use RationalNumber\RationalNumber;
  * $average = $grades->average();
  * </code>
  *
+ * Collections are immutable: add(), map() and filter() return a new collection, and array access
+ * is read-only.
+ *
  * @implements \IteratorAggregate<int, RationalNumber>
  * @implements \ArrayAccess<int, RationalNumber>
  */
-class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
+final readonly class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
 {
     /**
-     * @var RationalNumber[] Internal storage for RationalNumber instances
+     * @var list<RationalNumber> Elements, indexed from 0 to count() - 1.
      */
-    private array $numbers = [];
+    private array $numbers;
 
     /**
      * Constructor for RationalCollection.
      *
-     * @param array<RationalNumber> $numbers Optional array of RationalNumber instances to initialize with.
+     * @param array<mixed> $numbers RationalNumber instances (keys are ignored).
      * @throws InvalidArgumentException if any element is not a RationalNumber instance.
      */
     public function __construct(array $numbers = [])
     {
         foreach ($numbers as $number) {
-            $this->add($number);
+            if (!$number instanceof RationalNumber) {
+                throw new InvalidArgumentException("Value must be a RationalNumber instance.");
+            }
         }
+
+        /** @var list<RationalNumber> $list */
+        $list = array_values($numbers);
+        $this->numbers = $list;
     }
 
     /**
-     * Add a RationalNumber to the collection.
-     *
-     * In 3.0 collections become immutable and add() returns a new collection. Write
-     * `$collection = $collection->add($number);`, which already works in 2.x, to be ready.
-     * See UPGRADE-3.0.md.
+     * Return a new collection with a RationalNumber appended. The current collection is unchanged.
      *
      * @param RationalNumber $number The RationalNumber to add.
-     * @return self Returns $this for method chaining.
+     * @return self A new collection.
      */
     public function add(RationalNumber $number): self
     {
-        $this->numbers[] = $number;
-        return $this;
+        return new self([...$this->numbers, $number]);
     }
-
     /**
      * Get a RationalNumber at a specific index.
      *
@@ -128,11 +131,14 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
             throw new EmptyCollectionException("Cannot find minimum of an empty collection.");
         }
 
-        return array_reduce(
-            $this->numbers,
-            fn (RationalNumber $min, RationalNumber $n) => $n->isLessThan($min) ? $n : $min,
-            reset($this->numbers)
-        );
+        $min = $this->numbers[0];
+        foreach ($this->numbers as $n) {
+            if ($n->isLessThan($min)) {
+                $min = $n;
+            }
+        }
+
+        return $min;
     }
 
     /**
@@ -147,11 +153,14 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
             throw new EmptyCollectionException("Cannot find maximum of an empty collection.");
         }
 
-        return array_reduce(
-            $this->numbers,
-            fn (RationalNumber $max, RationalNumber $n) => $n->isGreaterThan($max) ? $n : $max,
-            reset($this->numbers)
-        );
+        $max = $this->numbers[0];
+        foreach ($this->numbers as $n) {
+            if ($n->isGreaterThan($max)) {
+                $max = $n;
+            }
+        }
+
+        return $max;
     }
 
     /**
@@ -163,11 +172,7 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
      */
     public function map(callable $callback): self
     {
-        $mapped = array_map($callback, $this->numbers);
-        /** @var RationalNumber[] $mapped */
-        $mapped = array_values($mapped);
-
-        return new self($mapped);
+        return new self(array_map($callback, $this->numbers));
     }
 
     /**
@@ -178,11 +183,8 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
      */
     public function filter(callable $callback): self
     {
-        $filtered = array_filter($this->numbers, $callback);
-        /** @var RationalNumber[] $filtered */
-        $filtered = array_values($filtered);
-
-        return new self($filtered);
+        // The constructor reindexes the filtered elements.
+        return new self(array_filter($this->numbers, $callback));
     }
 
     /**
@@ -205,19 +207,6 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
         return empty($this->numbers);
     }
 
-    /**
-     * Clear all elements from the collection.
-     *
-     * @deprecated since 2.11, removed in 3.0 (collections become immutable): use new RationalCollection().
-     *             See UPGRADE-3.0.md.
-     * @return self Returns $this for method chaining.
-     */
-    public function clear(): self
-    {
-        self::deprecated('clear()', 'new RationalCollection()');
-        $this->numbers = [];
-        return $this;
-    }
 
     // ========== Countable Interface ==========
 
@@ -245,7 +234,7 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
         return new \ArrayIterator($this->numbers);
     }
 
-    // ========== ArrayAccess Interface ==========
+    // ========== ArrayAccess Interface (read-only) ==========
 
     /**
      * Check if an offset exists.
@@ -278,70 +267,26 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
     }
 
     /**
-     * Set a value at an offset.
+     * Collections are immutable: use add() or new RationalCollection([...]) instead.
      *
-     * The offset must be null (append), an existing index (replace) or the next index (append).
-     * Integer strings such as "1" are accepted as indexes, as PHP arrays do.
-     *
-     * @deprecated since 2.11, removed in 3.0 (collections become immutable): use
-     *             $collection = $collection->add($number) or build a new RationalCollection([...]).
-     *             See UPGRADE-3.0.md.
-     * @param mixed $offset The offset to set (null appends to end).
-     * @param mixed $value The RationalNumber to set.
-     * @throws InvalidArgumentException if value is not a RationalNumber or the offset is not a valid index.
+     * @throws ImmutableCollectionException always.
      */
-    public function offsetSet(mixed $offset, mixed $value): void
+    public function offsetSet(mixed $offset, mixed $value): never
     {
-        self::deprecated('$collection[] = / $collection[$i] =', '$collection = $collection->add($number)');
-
-        if (!$value instanceof RationalNumber) {
-            throw new InvalidArgumentException("Value must be a RationalNumber instance.");
-        }
-
-        if ($offset === null) {
-            $this->numbers[] = $value;
-            return;
-        }
-
-        // Same rule as PHP array keys: "1" is the index 1, "01" or "price" are not indexes.
-        if (is_string($offset) && preg_match('/^(0|[1-9]\d*)$/', $offset)) {
-            $offset = (int) $offset;
-        }
-
-        $nextIndex = $this->numbers === [] ? 0 : array_key_last($this->numbers) + 1;
-        if (!is_int($offset) || ($offset !== $nextIndex && !isset($this->numbers[$offset]))) {
-            throw new InvalidArgumentException(
-                "Offset must be an existing index or the next index ({$nextIndex})."
-            );
-        }
-
-        $this->numbers[$offset] = $value;
+        throw new ImmutableCollectionException(
+            'RationalCollection is immutable: use $collection = $collection->add($number) instead.'
+        );
     }
 
     /**
-     * Unset a value at an offset. The other elements keep their index, so unsetting while
-     * iterating over the collection is safe.
+     * Collections are immutable: use filter() instead.
      *
-     * @deprecated since 2.11, removed in 3.0 (collections become immutable): use filter().
-     *             See UPGRADE-3.0.md.
-     * @param mixed $offset The offset to unset.
+     * @throws ImmutableCollectionException always.
      */
-    public function offsetUnset(mixed $offset): void
+    public function offsetUnset(mixed $offset): never
     {
-        self::deprecated('unset($collection[$i])', 'filter()');
-
-        if (!is_int($offset) && !is_string($offset)) {
-            return;
-        }
-
-        unset($this->numbers[$offset]);
-    }
-
-    /**
-     * Report the use of a mutating API that 3.0 removes.
-     */
-    private static function deprecated(string $usage, string $replacement): void
-    {
-        Deprecation::trigger("RationalCollection: {$usage}", "Collections become immutable: use {$replacement} instead.");
+        throw new ImmutableCollectionException(
+            'RationalCollection is immutable: use $collection = $collection->filter(...) instead.'
+        );
     }
 }

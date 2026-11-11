@@ -110,13 +110,22 @@ echo $collection[0]->getFloat();  // 1.0
 echo isset($collection[5]) ? 'yes' : 'no';  // "no"
 ```
 
-Elements are indexed from 0 in insertion order. Reading by index (`$collection[0]`, `isset()`)
-is the supported way to use array access.
+Elements are indexed from 0 to `count() - 1` in insertion order.
 
-> **Deprecated since 2.11:** writing through array access (`$collection[] = $n`,
-> `$collection[0] = $n`, `unset($collection[0])`) and `clear()` trigger an `E_USER_DEPRECATED`
-> warning. In 3.0 collections become immutable: use `$collection = $collection->add($n)`,
-> `filter()` or `new RationalCollection([...])` instead. See [UPGRADE-3.0.md](../UPGRADE-3.0.md).
+### Immutability
+
+Collections are immutable (since 3.0). `add()`, `map()` and `filter()` return a new collection
+and leave the original unchanged, so always use their result:
+
+```php
+$collection = new RationalCollection();
+$collection = $collection->add(RationalNumber::fromFloat(1));   // keep the result
+$evens = $collection->filter(fn (RationalNumber $n) => $n->getNumerator() % 2 === 0);
+```
+
+Array access is read-only: `$collection[] = $n`, `$collection[0] = $n` and `unset($collection[0])`
+throw a `RationalNumber\Exception\ImmutableCollectionException` (a `\LogicException`). `clear()`
+was removed: use `new RationalCollection()`. See [UPGRADE-3.0.md](../UPGRADE-3.0.md).
 
 ### Iteration
 
