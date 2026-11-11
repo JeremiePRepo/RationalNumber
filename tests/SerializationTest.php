@@ -307,4 +307,58 @@ class SerializationTest extends TestCase
         // Should parse correctly and reduce to 3/4
         $this->assertEquals("3/4", $number->toString());
     }
+
+    public function testNativeSerializationRoundTrip(): void
+    {
+        $number = new RationalNumber(-3, 4);
+
+        $restored = unserialize(serialize($number));
+
+        $this->assertInstanceOf(RationalNumber::class, $restored);
+        $this->assertTrue($restored->equals($number));
+    }
+
+    public function testNativeSerializationFormatIsUnchanged(): void
+    {
+        // Same format as 2.10, so payloads stored by older versions can still be read (and back).
+        $expected = 'O:29:"RationalNumber\RationalNumber":2:{'
+            . "s:40:\"\0RationalNumber\RationalNumber\0numerator\";i:1;"
+            . "s:42:\"\0RationalNumber\RationalNumber\0denominator\";i:2;}";
+
+        $this->assertSame($expected, serialize(new RationalNumber(1, 2)));
+        $this->assertSame('1/2', unserialize($expected)->toString());
+    }
+
+    public function testUnserializeNormalizesTheFraction(): void
+    {
+        $payload = $this->payload(2, -4);
+
+        $this->assertSame('-1/2', unserialize($payload)->toString());
+    }
+
+    public function testUnserializeRejectsAZeroDenominator(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Denominator cannot be zero.');
+
+        unserialize($this->payload(1, 0));
+    }
+
+    public function testUnserializeRejectsNonIntegerValues(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid serialized RationalNumber');
+
+        unserialize(str_replace('i:1;', 's:1:"1";', $this->payload(1, 2)));
+    }
+
+    /**
+     * Native serialization payload with arbitrary (possibly invalid) property values.
+     */
+    private function payload(int $numerator, int $denominator): string
+    {
+        return 'O:29:"RationalNumber\RationalNumber":2:{'
+            . "s:40:\"\0RationalNumber\RationalNumber\0numerator\";i:{$numerator};"
+            . "s:42:\"\0RationalNumber\RationalNumber\0denominator\";i:{$denominator};}";
+    }
 }

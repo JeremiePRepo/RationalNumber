@@ -31,6 +31,11 @@ deprecation warnings on 2.11 is ready for 3.0. See [UPGRADE-3.0.md](UPGRADE-3.0.
 - `multiply()`, `add()`, `subtract()` and `pow()` let some results just above `PHP_INT_MAX` through
   their overflow check (e.g. `2^62 * 2`, whose float bound is rounded) and then threw a `TypeError`
   instead of an overflow error.
+- `unserialize()` bypassed the constructor, so a stored payload could produce a non-normalized
+  (`2/-4`) or invalid (zero denominator) instance. `RationalNumber::__unserialize()` now applies
+  the constructor checks and normalization; the serialized format is unchanged.
+- Every overflow message now carries the GMP hint (the "too small" decimal and fraction-string
+  overflows lacked it).
 
 ### Changed
 

@@ -47,6 +47,30 @@ final readonly class RationalNumber implements ArithmeticOperations, Comparable,
     }
 
     /**
+     * Restore an instance from unserialize() with the same checks and normalization as the
+     * constructor, which unserialize() bypasses. The serialized format is unchanged.
+     *
+     * @param array<mixed> $data The serialized properties.
+     * @throws InvalidArgumentException if the data does not describe a valid rational number.
+     * @throws IntegerOverflowException if the numerator or the denominator is PHP_INT_MIN.
+     */
+    public function __unserialize(array $data): void
+    {
+        // Native serialization stores private properties under "\0Class\0name".
+        $prefix = "\0" . self::class . "\0";
+        $numerator = $data[$prefix . 'numerator'] ?? $data['numerator'] ?? null;
+        $denominator = $data[$prefix . 'denominator'] ?? $data['denominator'] ?? null;
+
+        if (!is_int($numerator) || !is_int($denominator)) {
+            throw new InvalidArgumentException("Invalid serialized RationalNumber: integer numerator and denominator expected.");
+        }
+
+        $number = new self($numerator, $denominator);
+        $this->numerator = $number->numerator;
+        $this->denominator = $number->denominator;
+    }
+
+    /**
      * Create a RationalNumber object from a float or int value.
      *
      * The float is converted from its shortest decimal representation (the one PHP uses with
