@@ -128,9 +128,9 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
         }
 
         return array_reduce(
-            array_slice($this->numbers, 1),
+            $this->numbers,
             fn (RationalNumber $min, RationalNumber $n) => $n->isLessThan($min) ? $n : $min,
-            $this->numbers[0]
+            reset($this->numbers)
         );
     }
 
@@ -147,9 +147,9 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
         }
 
         return array_reduce(
-            array_slice($this->numbers, 1),
+            $this->numbers,
             fn (RationalNumber $max, RationalNumber $n) => $n->isGreaterThan($max) ? $n : $max,
-            $this->numbers[0]
+            reset($this->numbers)
         );
     }
 
@@ -279,8 +279,8 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
     /**
      * Set a value at an offset.
      *
-     * The collection stays a list indexed from 0 to count() - 1: the offset must be null (append),
-     * an existing index (replace) or count() (append).
+     * The offset must be null (append), an existing index (replace) or the next index (append).
+     * Integer strings such as "1" are accepted as indexes, as PHP arrays do.
      *
      * @deprecated since 2.11, removed in 3.0 (collections become immutable): use
      *             $collection = $collection->add($number) or build a new RationalCollection([...]).
@@ -302,17 +302,24 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
             return;
         }
 
-        $count = count($this->numbers);
-        if (!is_int($offset) || $offset < 0 || $offset > $count) {
-            throw new InvalidArgumentException("Offset must be an integer between 0 and {$count}.");
+        // Same rule as PHP array keys: "1" is the index 1, "01" or "price" are not indexes.
+        if (is_string($offset) && preg_match('/^(0|[1-9]\d*)$/', $offset)) {
+            $offset = (int) $offset;
+        }
+
+        $nextIndex = $this->numbers === [] ? 0 : array_key_last($this->numbers) + 1;
+        if (!is_int($offset) || ($offset !== $nextIndex && !isset($this->numbers[$offset]))) {
+            throw new InvalidArgumentException(
+                "Offset must be an existing index or the next index ({$nextIndex})."
+            );
         }
 
         $this->numbers[$offset] = $value;
     }
 
     /**
-     * Unset a value at an offset. The following elements are shifted down so that indexes stay
-     * contiguous (after unset($collection[1]), the former element 2 is at index 1).
+     * Unset a value at an offset. The other elements keep their index, so unsetting while
+     * iterating over the collection is safe.
      *
      * @deprecated since 2.11, removed in 3.0 (collections become immutable): use filter().
      *             See UPGRADE-3.0.md.
@@ -327,7 +334,6 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
         }
 
         unset($this->numbers[$offset]);
-        $this->numbers = array_values($this->numbers);
     }
 
     /**

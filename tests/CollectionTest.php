@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace RationalNumber\Tests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use PHPUnit\Framework\TestCase;
 use RationalNumber\RationalNumber;
@@ -335,11 +336,46 @@ class CollectionTest extends TestCase
 
         unset($collection[1]);
 
-        // Indexes stay contiguous: the former element 2 moves to index 1.
+        // The other elements keep their index (2.10 behaviour).
         $this->assertCount(2, $collection);
-        $this->assertFalse(isset($collection[2]));
-        $this->assertSame('3/1', $collection[1]->toString());
-        $this->assertSame([0, 1], array_keys($collection->toArray()));
+        $this->assertFalse(isset($collection[1]));
+        $this->assertSame('3/1', $collection[2]->toString());
+        $this->assertSame([0, 2], array_keys($collection->toArray()));
+    }
+
+    #[IgnoreDeprecations]
+    public function testUnsetWhileIteratingRemovesTheExpectedElements(): void
+    {
+        $collection = new RationalCollection([
+            RationalNumber::fromFloat(1),
+            RationalNumber::fromFloat(2),
+            RationalNumber::fromFloat(3),
+            RationalNumber::fromFloat(4),
+        ]);
+
+        foreach ($collection as $index => $number) {
+            if ($number->getNumerator() % 2 === 1) {
+                unset($collection[$index]);
+            }
+        }
+
+        $this->assertSame(['2/1', '4/1'], array_map(fn ($n) => $n->toString(), array_values($collection->toArray())));
+    }
+
+    #[IgnoreDeprecations]
+    public function testUnsetEveryElementWhileIterating(): void
+    {
+        $collection = new RationalCollection([
+            RationalNumber::fromFloat(1),
+            RationalNumber::fromFloat(2),
+            RationalNumber::fromFloat(3),
+        ]);
+
+        foreach ($collection as $index => $number) {
+            unset($collection[$index]);
+        }
+
+        $this->assertCount(0, $collection);
     }
 
     #[IgnoreDeprecations]
@@ -369,20 +405,56 @@ class CollectionTest extends TestCase
     }
 
     #[IgnoreDeprecations]
-    public function testOffsetSetRejectsStringKeys(): void
+    public function testOffsetSetAcceptsIntegerStrings(): void
+    {
+        $collection = new RationalCollection([RationalNumber::fromFloat(1), RationalNumber::fromFloat(2)]);
+
+        $collection['1'] = RationalNumber::fromFloat(9);
+        $collection['2'] = RationalNumber::fromFloat(3);
+
+        $this->assertCount(3, $collection);
+        $this->assertSame('9/1', $collection[1]->toString());
+        $this->assertSame('3/1', $collection[2]->toString());
+    }
+
+    #[IgnoreDeprecations]
+    public function testOffsetSetAfterUnsetUsesTheNextIndex(): void
+    {
+        $collection = new RationalCollection([RationalNumber::fromFloat(1), RationalNumber::fromFloat(2)]);
+        unset($collection[0]);
+
+        $collection[2] = RationalNumber::fromFloat(3);
+
+        $this->assertSame([1, 2], array_keys($collection->toArray()));
+    }
+
+    /**
+     * @return iterable<string, array{mixed}>
+     */
+    public static function invalidStringKeyProvider(): iterable
+    {
+        yield 'text' => ['price'];
+        yield 'leading zero' => ['01'];
+        yield 'negative string' => ['-1'];
+        yield 'decimal string' => ['1.5'];
+    }
+
+    #[IgnoreDeprecations]
+    #[DataProvider('invalidStringKeyProvider')]
+    public function testOffsetSetRejectsStringKeys(string $offset): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Offset must be an integer between 0 and 0.');
+        $this->expectExceptionMessage('Offset must be an existing index or the next index (1).');
 
-        $collection = new RationalCollection();
-        $collection['price'] = RationalNumber::fromFloat(5);
+        $collection = new RationalCollection([RationalNumber::fromFloat(1)]);
+        $collection[$offset] = RationalNumber::fromFloat(5);
     }
 
     #[IgnoreDeprecations]
     public function testOffsetSetRejectsIndexesThatWouldLeaveAGap(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Offset must be an integer between 0 and 1.');
+        $this->expectExceptionMessage('Offset must be an existing index or the next index (1).');
 
         $collection = new RationalCollection([RationalNumber::fromFloat(1)]);
         $collection[5] = RationalNumber::fromFloat(5);

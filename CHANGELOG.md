@@ -28,13 +28,21 @@ deprecation warnings on 2.11 is ready for 3.0. See [UPGRADE-3.0.md](UPGRADE-3.0.
 - `add()` / `subtract()` threw a `TypeError` instead of an overflow error when the cross-products
   fit but their sum does not (e.g. `PHP_INT_MAX + 1`).
 - `RationalCollection::min()` / `max()` threw a `TypeError` after `unset($collection[0])`.
+- `multiply()`, `add()`, `subtract()` and `pow()` let some results just above `PHP_INT_MAX` through
+  their overflow check (e.g. `2^62 * 2`, whose float bound is rounded) and then threw a `TypeError`
+  instead of an overflow error.
 
 ### Changed
 
-- `RationalCollection` stays a list indexed from 0 to `count() - 1`: `unset($collection[$i])`
-  shifts the following elements down, and `offsetSet()` only accepts `null` or an integer between
-  0 and `count()`. **String keys (`$collection['price'] = ...`) and indexes that would leave a gap
-  now throw an `InvalidArgumentException`.**
+- `new RationalNumber()` throws an `IntegerOverflowException` when the numerator or the denominator
+  is `PHP_INT_MIN` (its opposite does not fit in an integer, so the fraction could not be
+  normalized exactly). This also applies to results equal to `PHP_INT_MIN`. Before, it threw a
+  `TypeError` or emitted a precision-loss warning.
+- Writing to a `RationalCollection` through array access only accepts `null` (append), an existing
+  index or the next index; integer strings such as `'1'` count as indexes. **Text keys
+  (`$collection['price'] = ...`) and indexes that would leave a gap now throw an
+  `InvalidArgumentException`.** `unset($collection[$i])` is unchanged: the other elements keep
+  their index.
 - `RationalNumber` is now a `final readonly class`.
 - The exact decimal parsing moved to the internal `RationalNumber\Internal\DecimalParser` class
   (not part of the public API).
