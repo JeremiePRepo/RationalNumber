@@ -22,11 +22,16 @@ php tests/Benchmarks/BenchmarkRunner.php
 
 Tests basic arithmetic performance:
 
-- **Addition (10k operations)**: Repeatedly adding numbers
-- **Subtraction (10k operations)**: Repeatedly subtracting numbers
-- **Multiplication (10k operations)**: Repeatedly multiplying numbers
-- **Division (10k operations)**: Repeatedly dividing numbers
-- **Mixed Operations (10k total)**: Combination of all four operations
+- **Addition (10k operations)**: Accumulating `+ 1` into a running total
+- **Subtraction (10k operations)**: Accumulating `- 1` from a running total
+- **Multiplication (10k operations)**: Multiplying the same two operands (`123.45 × 1.01`)
+- **Division (10k operations)**: Dividing the same two operands (`10000 ÷ 3/2`)
+- **Mixed Operations (10k total)**: An add → subtract → multiply → divide chain on fixed operands (2,500 × 4 operations)
+
+> Multiplication, division and mixed operations use fixed operands on purpose: feeding the
+> result back into the loop (e.g. multiplying by `1.01 = 101/100` 10,000 times) makes the
+> denominator grow as `100^n` and overflows 64-bit integers after a few iterations.
+> These benchmarks measure the cost of one operation, not the growth of the numbers.
 
 **Use Case:** Understand baseline performance for financial calculations, scientific computing, and general arithmetic.
 
@@ -39,7 +44,7 @@ Tests advanced mathematical operations:
 - **Square Root (100 numbers, 10 iterations)**: Newton-Raphson approximation
 - **Comparisons (40k operations)**: Greater than, less than, equals operations
 - **Rounding Operations (30k total)**: Round, floor, ceil operations
-- **Percentage Operations (30k total)**: Increase, decrease, percentage-of calculations
+- **Percentage Operations (30k total)**: `increaseByPercentage()`, `decreaseByPercentage()` and `toPercentage()`
 
 **Use Case:** Identify bottlenecks in scientific computing, financial modeling, and data analysis scenarios.
 
@@ -65,16 +70,20 @@ Tests batch processing performance:
    RationalNumber Performance Benchmarks
 ==========================================================
 
-PHP Version: 8.3.x
-Date: 2026-02-17 10:30:00
+PHP Version: 8.4.15
+Date: 2026-11-11 20:38:47
 
 ─────────────────────────────────────────────────────────
  Arithmetic Operations
 ─────────────────────────────────────────────────────────
-Addition (10k operations)                     0.0234 s       427,350 ops/s
-Subtraction (10k operations)                  0.0198 s       505,051 ops/s
+Addition (10k operations)                       0.0129 s       775,861 ops/s
+Subtraction (10k operations)                    0.0108 s       922,596 ops/s
+Multiplication (10k operations)                 0.0187 s       535,391 ops/s
 ...
 ```
+
+Collection benchmarks report `N/A ops/s`: they time a single operation over 1,000 elements,
+so only the duration is meaningful.
 
 ### Metrics Explained
 
@@ -97,19 +106,46 @@ Subtraction (10k operations)                  0.0198 s       505,051 ops/s
 3. **Immutability**: Each operation creates a new instance (memory allocations)
 4. **Collection Chaining**: Multiple passes through data (filter, then map, then sum)
 
-## Baseline Performance (v2.9.0)
+## Baseline Performance (v2.10.0)
 
-Reference baseline on PHP 8.3:
+Measured with `composer benchmark`, **median of 5 runs**.
 
-| Category | Operation | Expected Ops/Second |
-|----------|-----------|---------------------|
-| Arithmetic | Addition | ~400,000 |
-| Arithmetic | Multiplication | ~300,000 |
-| Complex | GCD Large Numbers | ~10,000 |
-| Complex | Power Operations | ~50,000 |
-| Collection | Sum (1000 elements) | ~0.01s total |
+**Environment:** PHP 8.4.15 CLI (ZTS, x64), Windows 11, Intel Core Ultra 7 255HX,
+Xdebug disabled (`XDEBUG_MODE=off`), OPcache and JIT disabled for the CLI (PHP defaults).
 
-**Note:** Actual performance varies by hardware, PHP version, and system load.
+| Category | Operation | Ops/Second (median) | Duration (median) |
+|----------|-----------|--------------------:|------------------:|
+| Arithmetic | Addition (10k) | ~840,000 | 11.9 ms |
+| Arithmetic | Subtraction (10k) | ~1,000,000 | 10.0 ms |
+| Arithmetic | Multiplication (10k) | ~645,000 | 15.5 ms |
+| Arithmetic | Division (10k) | ~595,000 | 16.8 ms |
+| Arithmetic | Mixed Operations (10k) | ~830,000 | 12.1 ms |
+| Complex | GCD Large Numbers (1k) | ~625,000 | 1.6 ms |
+| Complex | Power Operations (1k × `pow(10)`) | ~43,000 | 23.2 ms |
+| Complex | Square Root (100) | ~147,000 | 0.7 ms |
+| Complex | Comparisons (40k) | ~6,300,000 | 6.4 ms |
+| Complex | Rounding Operations (30k) | ~545,000 | 55.2 ms |
+| Complex | Percentage Operations (30k) | ~247,000 | 121.3 ms |
+| Collection | Sum (1000 elements) | N/A | 1.1 ms |
+| Collection | Average (1000 elements) | N/A | 1.0 ms |
+| Collection | Filter (1000 elements) | N/A | 0.6 ms |
+| Collection | Map (1000 elements) | N/A | 1.3 ms |
+| Collection | Min/Max (1000 elements) | N/A | 0.4 ms |
+| Collection | Chained Operations | N/A | 6.6 ms |
+
+**Observations:**
+
+- Comparisons are the fastest operations: a cross-multiplication, without creating a new instance.
+- Multiplication and division are ~25% slower than addition: they run more overflow checks and
+  division also computes a reciprocal.
+- `pow(10)` performs 9 chained multiplications, which explains ~43,000 calls/s.
+- Percentage operations are the slowest: each call parses the percentage string exactly
+  (no float conversion, since v2.10.0). See [Optimization Tips](#optimization-tips).
+- Run-to-run variance on this machine was about ±15% (the best run was up to 45% faster than the median),
+  so always compare medians of several runs.
+
+**Note:** Actual performance varies by hardware, PHP version, and system load. Numbers published
+before v2.10.0 were not produced by this suite, which could not run at the time.
 
 ## Regression Testing
 
@@ -119,8 +155,11 @@ To detect performance regressions:
 2. **Save results** (automatically saved as `benchmark-results-YYYY-MM-DD-HHMMSS.md`)
 3. **Compare with new versions** using saved results
 
-**Acceptable Variance:** ±10% between runs (due to system load)  
-**Regression Alert:** >20% slowdown indicates potential issue
+**Acceptable Variance:** ±15% between runs (due to system load); compare medians of at least 5 runs  
+**Regression Alert:** >20% slowdown of the median indicates potential issue
+
+Disable Xdebug when benchmarking (`XDEBUG_MODE=off composer benchmark`): it slows execution
+down significantly and makes results meaningless.
 
 ## Optimization Tips
 
@@ -135,6 +174,11 @@ If benchmarks show performance issues:
 - Reduce sqrt precision parameter if high accuracy isn't needed
 - Use integer power operations when possible
 - Pre-compute power tables for repeated exponents
+
+### For Percentages
+- Parse a percentage once and reuse it: `$rate = RationalNumber::fromPercentage('20%')`, then
+  `$price->add($price->multiply($rate))`, instead of calling `increaseByPercentage('20%')`
+  in a loop (which parses the string on every call)
 
 ### For Collections
 - Use array operations directly if type safety isn't critical
@@ -158,10 +202,11 @@ jobs:
   benchmark:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
+          coverage: none
       - run: composer install
       - run: composer benchmark
       - name: Check for regressions
@@ -193,5 +238,5 @@ A: Yes! Submit PRs with new benchmark scenarios or optimization suggestions.
 
 ---
 
-**Last Updated:** February 17, 2026  
-**Version:** RationalNumber 2.9.0
+**Last Updated:** November 11, 2026  
+**Version:** RationalNumber 2.10.0
