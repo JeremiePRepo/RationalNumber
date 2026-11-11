@@ -278,6 +278,19 @@ class RationalNumberTest extends TestCase
         $this->assertEquals(150, $result->getFloat());
     }
 
+    public function testPercentageMethodsAcceptARateAsRationalNumber(): void
+    {
+        $price = new RationalNumber(200);
+        $rate = RationalNumber::fromPercentage('25%');
+
+        $this->assertSame('250/1', $price->increaseByPercentage($rate)->toString());
+        $this->assertSame('150/1', $price->decreaseByPercentage($rate)->toString());
+        $this->assertSame('220/1', $price->increaseByPercentage(new RationalNumber(1, 10))->toString());
+        $this->assertTrue(
+            $price->increaseByPercentage('12.5%')->equals($price->increaseByPercentage(new RationalNumber(1, 8)))
+        );
+    }
+
     public function testZeroDenominatorThrowsException(): void
     {
         $this->expectException(\InvalidArgumentException::class);

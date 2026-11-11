@@ -321,34 +321,43 @@ final readonly class RationalNumber implements ArithmeticOperations, Comparable,
 
     /**
      * Increase the current rational number by a specified percentage.
-     * @param string $percentage The percentage value as a string (e.g., "50%") to increase by.
+     *
+     * The rate is either a percentage string ("20%") or a RationalNumber holding the rate as a
+     * fraction (1/5 for 20%, as returned by fromPercentage()). Pass a RationalNumber to parse a
+     * rate once and reuse it:
+     * <code>
+     * $vat = RationalNumber::fromPercentage('20%');
+     * $priceWithVat = $price->increaseByPercentage($vat);
+     * </code>
+     *
+     * @param RationalNumber|string $percentage The rate to increase by (e.g., "50%" or 1/2).
      * @return RationalNumber The result of the increase as a new RationalNumber object.
      */
-    public function increaseByPercentage(string $percentage): RationalNumber
+    public function increaseByPercentage(RationalNumber|string $percentage): RationalNumber
     {
-        // Calculate the increase as a fraction of the current value.
-        $increaseFraction = $this->multiply(self::fromPercentage($percentage));
-
-        // Add the increase to the current value.
-        $increasedRationalNumber = $this->add($increaseFraction);
-
-        return $increasedRationalNumber;
+        return $this->add($this->multiply(self::toRate($percentage)));
     }
 
     /**
      * Decrease the current rational number by a specified percentage.
-     * @param string $percentage The percentage value as a string (e.g., "50%") to decrease by.
+     *
+     * The rate is either a percentage string ("20%") or a RationalNumber holding the rate as a
+     * fraction (1/5 for 20%, as returned by fromPercentage()).
+     *
+     * @param RationalNumber|string $percentage The rate to decrease by (e.g., "50%" or 1/2).
      * @return RationalNumber The result of the decrease as a new RationalNumber object.
      */
-    public function decreaseByPercentage(string $percentage): RationalNumber
+    public function decreaseByPercentage(RationalNumber|string $percentage): RationalNumber
     {
-        // Calculate the decrease as a fraction of the current value.
-        $decreaseFraction = $this->multiply(self::fromPercentage($percentage));
+        return $this->subtract($this->multiply(self::toRate($percentage)));
+    }
 
-        // Subtract the decrease from the current value.
-        $decreasedRationalNumber = $this->subtract($decreaseFraction);
-
-        return $decreasedRationalNumber;
+    /**
+     * Turn a percentage argument into the rate as a fraction ("20%" => 1/5).
+     */
+    private static function toRate(RationalNumber|string $percentage): RationalNumber
+    {
+        return $percentage instanceof self ? $percentage : self::fromPercentage($percentage);
     }
 
     /**

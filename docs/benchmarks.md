@@ -177,8 +177,8 @@ If benchmarks show performance issues:
 
 ### For Percentages
 - Parse a percentage once and reuse it: `$rate = RationalNumber::fromPercentage('20%')`, then
-  `$price->add($price->multiply($rate))`, instead of calling `increaseByPercentage('20%')`
-  in a loop (which parses the string on every call)
+  `$price->increaseByPercentage($rate)` (since 2.11), instead of calling
+  `increaseByPercentage('20%')` in a loop (which parses the string on every call)
 
 ### For Collections
 - Use array operations directly if type safety isn't critical
