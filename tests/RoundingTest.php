@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace RationalNumber\Tests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use RationalNumber\Exception\IntegerOverflowException;
 use RationalNumber\RationalNumber;
 use InvalidArgumentException;
 
@@ -247,5 +249,91 @@ class RoundingTest extends TestCase
 
         // 0.004 rounds to 0.00
         $this->assertTrue($rounded->isZero() || $rounded->getFloat() < 0.01);
+    }
+
+    // ========== Exact results beyond 2^53 ==========
+
+    /**
+     * @return iterable<string, array{RationalNumber, string, string, string}>
+     */
+    public static function largeValueProvider(): iterable
+    {
+        // [value, floor, ceil, round] — a float conversion rounds all of these to 2^62.
+        yield 'MAX / 2' => [new RationalNumber(PHP_INT_MAX, 2), '4611686018427387903', '4611686018427387904', '4611686018427387904'];
+        yield '-MAX / 2' => [new RationalNumber(-PHP_INT_MAX, 2), '-4611686018427387904', '-4611686018427387903', '-4611686018427387904'];
+        yield 'MAX / 3' => [new RationalNumber(PHP_INT_MAX, 3), '3074457345618258602', '3074457345618258603', '3074457345618258602'];
+        yield 'just below an integer' => [new RationalNumber(PHP_INT_MAX - 1, PHP_INT_MAX), '0', '1', '1'];
+    }
+
+    #[DataProvider('largeValueProvider')]
+    public function testFloorCeilRoundAreExactForLargeValues(RationalNumber $value, string $floor, string $ceil, string $round): void
+    {
+        $this->assertSame($floor . '/1', $value->floor()->toString());
+        $this->assertSame($ceil . '/1', $value->ceil()->toString());
+        $this->assertSame($round . '/1', $value->round()->toString());
+    }
+
+    /**
+     * @return iterable<string, array{RationalNumber, int, string}>
+     */
+    public static function tieProvider(): iterable
+    {
+        yield '2.5' => [new RationalNumber(5, 2), 1, '3/1'];
+        yield '-2.5' => [new RationalNumber(-5, 2), 1, '-3/1'];
+        yield '0.125 to tenths' => [new RationalNumber(1, 8), 100, '13/100'];
+        yield '-0.125 to hundredths' => [new RationalNumber(-1, 8), 100, '-13/100'];
+        yield '1.005 is exact (no float drift)' => [new RationalNumber(201, 200), 100, '101/100'];
+    }
+
+    #[DataProvider('tieProvider')]
+    public function testRoundHalvesAwayFromZero(RationalNumber $value, int $denominator, string $expected): void
+    {
+        $this->assertSame($expected, $value->round($denominator)->toString());
+    }
+
+    public function testRoundWithLargeDenominatorIsExact(): void
+    {
+        // 1/3 to the nearest 1/(10^18): the 18 digits are exact.
+        $rounded = (new RationalNumber(1, 3))->round(1000000000000000000);
+
+        $this->assertSame('333333333333333333/1000000000000000000', $rounded->toString());
+    }
+
+    public function testRoundThrowsOverflowWhenTheResultDoesNotFit(): void
+    {
+        $this->expectException(IntegerOverflowException::class);
+
+        (new RationalNumber(PHP_INT_MAX, 2))->round(4);
+    }
+
+    // ========== toPercentage() ==========
+
+    /**
+     * @return iterable<string, array{RationalNumber, int, string}>
+     */
+    public static function percentageProvider(): iterable
+    {
+        yield 'one third' => [new RationalNumber(1, 3), 2, '33.33%'];
+        yield 'two thirds' => [new RationalNumber(2, 3), 2, '66.67%'];
+        yield 'tie away from zero' => [new RationalNumber(-1, 800), 2, '-0.13%'];
+        yield 'rounds to zero, no minus sign' => [new RationalNumber(-1, 100000), 2, '0.00%'];
+        yield 'no decimals' => [new RationalNumber(1, 2), 0, '50%'];
+        yield 'thousands separators' => [new RationalNumber(1234567, 100), 1, '1,234,567.0%'];
+        yield 'beyond float precision' => [new RationalNumber(123456789012345678, 1000), 2, '12,345,678,901,234,567.80%'];
+        yield 'small value, many decimals' => [new RationalNumber(1, 7), 10, '14.2857142857%'];
+    }
+
+    #[DataProvider('percentageProvider')]
+    public function testToPercentageIsExact(RationalNumber $value, int $decimals, string $expected): void
+    {
+        $this->assertSame($expected, $value->toPercentage($decimals));
+    }
+
+    public function testToPercentageRejectsInvalidDecimals(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Decimal places must be between 0 and 16.');
+
+        (new RationalNumber(1, 2))->toPercentage(17);
     }
 }

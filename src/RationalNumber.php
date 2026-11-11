@@ -21,6 +21,11 @@ final readonly class RationalNumber implements \JsonSerializable
      */
     private const SQRT_INT_MAX = 3037000499;
 
+    /**
+     * Largest number of decimal places for toPercentage(): 100 * 10^16 still fits in an int.
+     */
+    private const MAX_PERCENTAGE_DECIMALS = 16;
+
     private int $numerator;
     private int $denominator;
 
@@ -271,8 +276,26 @@ final readonly class RationalNumber implements \JsonSerializable
      */
     public function toPercentage(int $decimalPlaces = 2): string
     {
-        $percentage = $this->getFloat() * 100;
-        return number_format($percentage, $decimalPlaces) . "%";
+        if ($decimalPlaces < 0 || $decimalPlaces > self::MAX_PERCENTAGE_DECIMALS) {
+            throw new InvalidArgumentException(
+                "Decimal places must be between 0 and " . self::MAX_PERCENTAGE_DECIMALS . "."
+            );
+        }
+
+        // Exact: the percentage scaled by 10^decimals, rounded half away from zero (as number_format()).
+        $scale = 10 ** $decimalPlaces;
+        $scaled = $this->roundedMultiple(100 * $scale);
+
+        // At least one digit before the decimal point: 5 with 2 decimals is "0.05".
+        $digits = str_pad((string) abs($scaled), $decimalPlaces + 1, '0', STR_PAD_LEFT);
+        $integerLength = strlen($digits) - $decimalPlaces;
+        $integerDigits = substr($digits, 0, $integerLength);
+        $fractionDigits = substr($digits, $integerLength);
+
+        // Same format as number_format(): "," between thousands, "." before decimals, no "-0".
+        $grouped = strrev(implode(',', str_split(strrev($integerDigits), 3)));
+
+        return ($scaled < 0 ? '-' : '') . $grouped . ($fractionDigits === '' ? '' : '.' . $fractionDigits) . '%';
     }
 
     /**
@@ -444,6 +467,83 @@ final readonly class RationalNumber implements \JsonSerializable
             [$a, $b, $c, $d] = [$b, $remainderA, $d, $remainderC];
             $sign = -$sign;
         }
+    }
+
+    /**
+     * This number multiplied by $multiplier, rounded to the nearest integer, halves away from zero
+     * (the rounding of PHP's round()). Exact: no float is involved.
+     *
+     * @param int $multiplier A positive multiplier.
+     * @throws IntegerOverflowException if the result does not fit in an int.
+     */
+    private function roundedMultiple(int $multiplier): int
+    {
+        // |x| * m = (q + r / den) * m = q * m + floor(r * m / den) + remainder / den
+        $q = intdiv(abs($this->numerator), $this->denominator);
+        $r = abs($this->numerator) % $this->denominator;
+
+        self::checkMultiplicationOverflow($q, $multiplier, 'rounding');
+        [$fraction, $remainder] = self::mulDivMod($r, $multiplier, $this->denominator);
+
+        // Round half away from zero: up when remainder / den >= 1/2 (2 * remainder could overflow).
+        $roundUp = $remainder >= $this->denominator - $remainder ? 1 : 0;
+        $magnitude = $q * $multiplier;
+        if ($magnitude > PHP_INT_MAX - $fraction - $roundUp) {
+            throw IntegerOverflowException::create("Operation would cause integer overflow during rounding.");
+        }
+        $magnitude += $fraction + $roundUp;
+
+        return $this->numerator < 0 ? -$magnitude : $magnitude;
+    }
+
+    /**
+     * floor($a * $b / $m) and ($a * $b) mod $m, exactly, for 0 <= $a < $m and $b >= 0.
+     *
+     * @return array{int, int} [quotient, remainder]
+     * @throws IntegerOverflowException if the quotient does not fit in an int.
+     */
+    private static function mulDivMod(int $a, int $b, int $m): array
+    {
+        if (self::productFits($a, $b)) {
+            $product = $a * $b;
+            return [intdiv($product, $m), $product % $m];
+        }
+
+        // a * b / m = a * floor(b / m) + a * (b mod m) / m. The first term is the big one.
+        self::checkMultiplicationOverflow($a, intdiv($b, $m), 'rounding');
+        $quotient = $a * intdiv($b, $m);
+
+        // a * (b mod m), both factors below m: binary multiplication modulo m, keeping the quotient
+        // (it stays below b mod m) and the remainder below m at every step.
+        $factor = $b % $m;
+        $q = 0;
+        $r = 0;
+        for ($bit = 62; $bit >= 0; $bit--) {
+            // (q, r) <- 2 * (q, r)
+            $q *= 2;
+            if ($r >= $m - $r) {
+                $r -= $m - $r;
+                $q++;
+            } else {
+                $r += $r;
+            }
+
+            if (($factor >> $bit) & 1) {
+                // (q, r) <- (q, r) + a
+                if ($r >= $m - $a) {
+                    $r -= $m - $a;
+                    $q++;
+                } else {
+                    $r += $a;
+                }
+            }
+        }
+
+        if ($quotient > PHP_INT_MAX - $q) {
+            throw IntegerOverflowException::create("Operation would cause integer overflow during rounding.");
+        }
+
+        return [$quotient + $q, $r];
     }
 
     /**
@@ -633,11 +733,7 @@ final readonly class RationalNumber implements \JsonSerializable
             throw new InvalidArgumentException("Denominator must be greater than zero.");
         }
 
-        $numerator = (int) round(
-            $this->numerator * $denominator / $this->denominator
-        );
-
-        return new self($numerator, $denominator);
+        return new self($this->roundedMultiple($denominator), $denominator);
     }
 
     /**
@@ -647,8 +743,10 @@ final readonly class RationalNumber implements \JsonSerializable
      */
     public function floor(): RationalNumber
     {
-        $integerPart = (int) floor($this->getFloat());
-        return new self($integerPart, 1);
+        $quotient = intdiv($this->numerator, $this->denominator);
+
+        // intdiv() truncates towards zero: step down for negative non-integers.
+        return new self($this->numerator < 0 && $this->numerator % $this->denominator !== 0 ? $quotient - 1 : $quotient);
     }
 
     /**
@@ -658,8 +756,10 @@ final readonly class RationalNumber implements \JsonSerializable
      */
     public function ceil(): RationalNumber
     {
-        $integerPart = (int) ceil($this->getFloat());
-        return new self($integerPart, 1);
+        $quotient = intdiv($this->numerator, $this->denominator);
+
+        // intdiv() truncates towards zero: step up for positive non-integers.
+        return new self($this->numerator > 0 && $this->numerator % $this->denominator !== 0 ? $quotient + 1 : $quotient);
     }
 
     /**
