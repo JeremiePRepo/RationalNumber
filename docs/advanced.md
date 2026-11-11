@@ -156,21 +156,20 @@ try {
 - `pow()` can also trigger overflow, especially with large exponents
 - `sqrt()` may produce very large numerators/denominators that can overflow
 - Large intermediate values can overflow even if the final result would fit in memory
-- Throws `RationalNumber\Exception\IntegerOverflowException` before the overflow occurs
-- In 2.x it extends `\ArithmeticError` (in 3.0 it will extend `\OverflowException`): catch
-  `IntegerOverflowException` or `RationalNumberException` to work with both versions
+- Throws `RationalNumber\Exception\IntegerOverflowException` (an `\OverflowException`) before
+  the overflow occurs
+- Error messages suggest installing/using GMP extension for larger numbers
+- Detection happens during cross-multiplication in addition/subtraction
 
-**Exception hierarchy (since 2.11):** every exception thrown by the library implements
-`RationalNumber\Exception\RationalNumberException`, and keeps the type thrown before 2.11:
+**Exception hierarchy:** every exception thrown by the library implements
+`RationalNumber\Exception\RationalNumberException`:
 
 | Exception | Extends | Thrown for |
 |-----------|---------|------------|
 | `InvalidArgumentException` | `\InvalidArgumentException` | invalid input (format, zero denominator, INF/NAN, array, JSON) |
 | `DivisionByZeroException` | `InvalidArgumentException` | `divideBy()` zero, `reciprocal()` of zero |
 | `EmptyCollectionException` | `InvalidArgumentException` | `average()`, `min()`, `max()` of an empty collection |
-| `IntegerOverflowException` | `\ArithmeticError` | any value that does not fit in a 64-bit integer |
-- Error messages suggest installing/using GMP extension for larger numbers
-- Detection happens during cross-multiplication in addition/subtraction
+| `IntegerOverflowException` | `\OverflowException` | any value that does not fit in a 64-bit integer (`\ArithmeticError` in 2.x) |
 
 **For very large numbers**, consider installing the GMP extension:
 

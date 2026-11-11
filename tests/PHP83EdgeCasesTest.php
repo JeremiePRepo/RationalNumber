@@ -376,7 +376,7 @@ class PHP83EdgeCasesTest extends TestCase
      */
     public function testMultiplicationOverflowDetection(): void
     {
-        $this->expectException(\ArithmeticError::class);
+        $this->expectException(\OverflowException::class);
         $this->expectExceptionMessageMatches('/overflow/i');
 
         // Create a number that will overflow when multiplied by itself
@@ -389,7 +389,7 @@ class PHP83EdgeCasesTest extends TestCase
      */
     public function testAdditionOverflowDetection(): void
     {
-        $this->expectException(\ArithmeticError::class);
+        $this->expectException(\OverflowException::class);
         $this->expectExceptionMessageMatches('/overflow/i');
 
         // Create numbers that will overflow during cross-multiplication in add()
@@ -403,7 +403,7 @@ class PHP83EdgeCasesTest extends TestCase
      */
     public function testSubtractionOverflowDetection(): void
     {
-        $this->expectException(\ArithmeticError::class);
+        $this->expectException(\OverflowException::class);
         $this->expectExceptionMessageMatches('/overflow/i');
 
         // Create numbers that will overflow during cross-multiplication in subtract()
@@ -417,7 +417,7 @@ class PHP83EdgeCasesTest extends TestCase
      */
     public function testAdditionSumOverflowDetection(): void
     {
-        $this->expectException(\ArithmeticError::class);
+        $this->expectException(\OverflowException::class);
         $this->expectExceptionMessage('Operation would cause integer overflow during addition.');
 
         (new RationalNumber(PHP_INT_MAX))->add(new RationalNumber(1));
@@ -425,7 +425,7 @@ class PHP83EdgeCasesTest extends TestCase
 
     public function testSubtractionSumOverflowDetection(): void
     {
-        $this->expectException(\ArithmeticError::class);
+        $this->expectException(\OverflowException::class);
         $this->expectExceptionMessage('Operation would cause integer overflow during subtraction.');
 
         (new RationalNumber(-PHP_INT_MAX))->subtract(new RationalNumber(2));
@@ -568,7 +568,7 @@ class PHP83EdgeCasesTest extends TestCase
      */
     public function testFromFloatExtremeScientificOverflow(): void
     {
-        $this->expectException(\ArithmeticError::class);
+        $this->expectException(\OverflowException::class);
         $this->expectExceptionMessageMatches('/overflow/i');
 
         // This should cause overflow
@@ -605,8 +605,8 @@ class PHP83EdgeCasesTest extends TestCase
         try {
             $largeNum = new RationalNumber(PHP_INT_MAX, 2);
             $largeNum->multiply($largeNum);
-            $this->fail('Expected ArithmeticError was not thrown');
-        } catch (\ArithmeticError $e) {
+            $this->fail('Expected OverflowException was not thrown');
+        } catch (\OverflowException $e) {
             $message = $e->getMessage();
             $this->assertStringContainsStringIgnoringCase('overflow', $message);
             $this->assertStringContainsStringIgnoringCase('gmp', $message);

@@ -7,10 +7,10 @@ namespace RationalNumber\Exception;
 /**
  * Thrown when a value or an intermediate result does not fit in a 64-bit integer.
  *
- * In 2.x it extends \ArithmeticError, the type thrown before it existed. In 3.0 it will extend
- * \OverflowException instead: catch RationalNumberException (or this class) to work with both.
+ * Since 3.0 it extends \OverflowException (in 2.x it extended \ArithmeticError). Catch this class
+ * or RationalNumberException to handle it.
  */
-class IntegerOverflowException extends \ArithmeticError implements RationalNumberException
+class IntegerOverflowException extends \OverflowException implements RationalNumberException
 {
     /**
      * Create the exception with a hint about the GMP extension appended to the message.

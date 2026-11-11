@@ -68,32 +68,32 @@ class ExceptionTest extends TestCase
         yield 'multiplication overflow' => [
             fn () => (new RationalNumber(PHP_INT_MAX))->multiply(new RationalNumber(2)),
             IntegerOverflowException::class,
-            \ArithmeticError::class,
+            \OverflowException::class,
         ];
         yield 'decimal too large' => [
             fn () => RationalNumber::fromString('1e30'),
             IntegerOverflowException::class,
-            \ArithmeticError::class,
+            \OverflowException::class,
         ];
         yield 'decimal too small' => [
             fn () => RationalNumber::fromFloat(1e-30),
             IntegerOverflowException::class,
-            \ArithmeticError::class,
+            \OverflowException::class,
         ];
         yield 'fraction numerator too large' => [
             fn () => RationalNumber::fromString('9223372036854775808/1'),
             IntegerOverflowException::class,
-            \ArithmeticError::class,
+            \OverflowException::class,
         ];
         yield 'fraction denominator too large' => [
             fn () => RationalNumber::fromString('1/9223372036854775808'),
             IntegerOverflowException::class,
-            \ArithmeticError::class,
+            \OverflowException::class,
         ];
         yield 'PHP_INT_MIN' => [
             fn () => new RationalNumber(PHP_INT_MIN),
             IntegerOverflowException::class,
-            \ArithmeticError::class,
+            \OverflowException::class,
         ];
     }
 

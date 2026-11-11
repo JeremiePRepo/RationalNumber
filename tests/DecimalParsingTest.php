@@ -118,7 +118,7 @@ class DecimalParsingTest extends TestCase
     #[DataProvider('overflowingStringProvider')]
     public function testFromStringThrowsOnValuesThatCannotBeRepresented(string $input): void
     {
-        $this->expectException(\ArithmeticError::class);
+        $this->expectException(\OverflowException::class);
         $this->expectExceptionMessageMatches('/overflow/i');
 
         RationalNumber::fromString($input);
@@ -193,7 +193,7 @@ class DecimalParsingTest extends TestCase
 
     public function testFromFloatThrowsWhenValueIsTooLarge(): void
     {
-        $this->expectException(\ArithmeticError::class);
+        $this->expectException(\OverflowException::class);
         $this->expectExceptionMessageMatches('/overflow/i');
 
         RationalNumber::fromFloat(1e19);
@@ -202,7 +202,7 @@ class DecimalParsingTest extends TestCase
     public function testFromFloatThrowsInsteadOfReturningZeroForTinyValues(): void
     {
         // Used to silently return 0/1.
-        $this->expectException(\ArithmeticError::class);
+        $this->expectException(\OverflowException::class);
         $this->expectExceptionMessageMatches('/too small/i');
 
         RationalNumber::fromFloat(1.5e-20);
