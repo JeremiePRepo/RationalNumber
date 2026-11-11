@@ -418,6 +418,34 @@ class PHP83EdgeCasesTest extends TestCase
     }
 
     /**
+     * The products fit, but their sum does not (int + int would silently become a float).
+     */
+    public function testAdditionSumOverflowDetection(): void
+    {
+        $this->expectException(\ArithmeticError::class);
+        $this->expectExceptionMessage('Operation would cause integer overflow during addition.');
+
+        (new RationalNumber(PHP_INT_MAX))->add(new RationalNumber(1));
+    }
+
+    public function testSubtractionSumOverflowDetection(): void
+    {
+        $this->expectException(\ArithmeticError::class);
+        $this->expectExceptionMessage('Operation would cause integer overflow during subtraction.');
+
+        (new RationalNumber(-PHP_INT_MAX))->subtract(new RationalNumber(2));
+    }
+
+    public function testAdditionAtIntegerLimitsDoesNotOverflow(): void
+    {
+        $sum = (new RationalNumber(PHP_INT_MAX - 1))->add(new RationalNumber(1));
+        $difference = (new RationalNumber(-PHP_INT_MAX + 1))->subtract(new RationalNumber(1));
+
+        $this->assertSame(PHP_INT_MAX, $sum->getNumerator());
+        $this->assertSame(-PHP_INT_MAX, $difference->getNumerator());
+    }
+
+    /**
      * Test fromFloat with scientific notation - small numbers
      */
     public function testFromFloatScientificNotationSmall(): void

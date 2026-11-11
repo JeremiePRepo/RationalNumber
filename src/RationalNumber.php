@@ -216,7 +216,13 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
         $this->checkMultiplicationOverflow($otherNumerator, $this->denominator, 'addition cross-multiplication');
         $this->checkMultiplicationOverflow($this->denominator, $otherDenominator, 'denominator multiplication');
 
-        $newNumerator = $this->numerator * $otherDenominator + $otherNumerator * $this->denominator;
+        $left = $this->numerator * $otherDenominator;
+        $right = $otherNumerator * $this->denominator;
+        if ($right > 0 ? $left > PHP_INT_MAX - $right : $left < PHP_INT_MIN - $right) {
+            throw IntegerOverflowException::create("Operation would cause integer overflow during addition.");
+        }
+
+        $newNumerator = $left + $right;
         $newDenominator = $this->denominator * $otherDenominator;
         return new RationalNumber($newNumerator, $newDenominator);
     }
@@ -241,7 +247,13 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
         $this->checkMultiplicationOverflow($otherNumerator, $this->denominator, 'subtraction cross-multiplication');
         $this->checkMultiplicationOverflow($this->denominator, $otherDenominator, 'denominator multiplication');
 
-        $newNumerator = $this->numerator * $otherDenominator - $otherNumerator * $this->denominator;
+        $left = $this->numerator * $otherDenominator;
+        $right = $otherNumerator * $this->denominator;
+        if ($right > 0 ? $left < PHP_INT_MIN + $right : $left > PHP_INT_MAX + $right) {
+            throw IntegerOverflowException::create("Operation would cause integer overflow during subtraction.");
+        }
+
+        $newNumerator = $left - $right;
         $newDenominator = $this->denominator * $otherDenominator;
         return new RationalNumber($newNumerator, $newDenominator);
     }
