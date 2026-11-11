@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace RationalNumber\Tests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use RationalNumber\RationalNumber;
 
@@ -39,17 +40,13 @@ class DecimalParsingTest extends TestCase
     // fromFloat() and fromString(): same exact result for the same decimal
     // ---------------------------------------------------------------
 
-    /**
-     * @dataProvider decimalProvider
-     */
+    #[DataProvider('decimalProvider')]
     public function testFromFloatIsExact(string $input, string $expected): void
     {
         $this->assertSame($expected, RationalNumber::fromFloat((float) $input)->toString());
     }
 
-    /**
-     * @dataProvider decimalProvider
-     */
+    #[DataProvider('decimalProvider')]
     public function testFromStringIsExact(string $input, string $expected): void
     {
         $this->assertSame($expected, RationalNumber::fromString($input)->toString());
@@ -87,9 +84,7 @@ class DecimalParsingTest extends TestCase
     // fromString(): exact parsing of inputs a float cannot hold
     // ---------------------------------------------------------------
 
-    /**
-     * @dataProvider exactDecimalStringProvider
-     */
+    #[DataProvider('exactDecimalStringProvider')]
     public function testFromStringParsesDecimalsExactly(string $input, string $expected): void
     {
         $this->assertSame($expected, RationalNumber::fromString($input)->toString());
@@ -120,9 +115,7 @@ class DecimalParsingTest extends TestCase
     // fromString(): strict errors
     // ---------------------------------------------------------------
 
-    /**
-     * @dataProvider overflowingStringProvider
-     */
+    #[DataProvider('overflowingStringProvider')]
     public function testFromStringThrowsOnValuesThatCannotBeRepresented(string $input): void
     {
         $this->expectException(\ArithmeticError::class);
@@ -148,9 +141,7 @@ class DecimalParsingTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider invalidStringProvider
-     */
+    #[DataProvider('invalidStringProvider')]
     public function testFromStringThrowsOnInvalidFormat(string $input): void
     {
         $this->expectException(\InvalidArgumentException::class);
@@ -179,9 +170,7 @@ class DecimalParsingTest extends TestCase
     // fromFloat()
     // ---------------------------------------------------------------
 
-    /**
-     * @dataProvider nonFiniteFloatProvider
-     */
+    #[DataProvider('nonFiniteFloatProvider')]
     public function testFromFloatThrowsOnNonFiniteValues(float $value): void
     {
         $this->expectException(\InvalidArgumentException::class);
@@ -221,9 +210,8 @@ class DecimalParsingTest extends TestCase
 
     /**
      * Values whose exact decimal does not fit are rounded (half up) to 18 decimal places.
-     *
-     * @dataProvider floatsToRoundProvider
      */
+    #[DataProvider('floatsToRoundProvider')]
     public function testFromFloatRoundsValuesThatDoNotFitExactly(float $value, string $expected): void
     {
         $this->assertSame($expected, RationalNumber::fromFloat($value)->toString());
@@ -260,9 +248,7 @@ class DecimalParsingTest extends TestCase
     // Independence from the precision ini settings
     // ---------------------------------------------------------------
 
-    /**
-     * @dataProvider iniSettingsProvider
-     */
+    #[DataProvider('iniSettingsProvider')]
     public function testConversionsDoNotDependOnPrecisionSettings(string $precision, string $serializePrecision): void
     {
         ini_set('precision', $precision);
@@ -297,9 +283,7 @@ class DecimalParsingTest extends TestCase
     // fromPercentage()
     // ---------------------------------------------------------------
 
-    /**
-     * @dataProvider percentageProvider
-     */
+    #[DataProvider('percentageProvider')]
     public function testFromPercentageIsExact(string $input, string $expected): void
     {
         $this->assertSame($expected, RationalNumber::fromPercentage($input)->toString());
@@ -321,9 +305,7 @@ class DecimalParsingTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider invalidPercentageProvider
-     */
+    #[DataProvider('invalidPercentageProvider')]
     public function testFromPercentageThrowsOnInvalidInput(string $input): void
     {
         $this->expectException(\InvalidArgumentException::class);

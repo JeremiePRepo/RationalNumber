@@ -6,7 +6,11 @@ composer.phar
 
 # PHPUnit
 .phpunit.result.cache
+.phpunit.cache/
 phpunit.xml
+
+# PHP CS Fixer
+.php-cs-fixer.cache
 
 # PHPDocumentor
 /docs/api/
