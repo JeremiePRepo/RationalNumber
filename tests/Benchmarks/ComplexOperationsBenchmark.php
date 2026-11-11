@@ -67,14 +67,14 @@ class ComplexOperationsBenchmark
 
         for ($i = 1; $i <= 100; $i++) {
             $number = RationalNumber::fromFloat($i);
-            $sqrt = $number->sqrt(10); // 10 iterations Newton-Raphson
+            $sqrt = $number->sqrt(6); // 6 decimal places
         }
 
         $duration = microtime(true) - $start;
         $opsPerSecond = 100 / $duration;
 
         return [
-            'name' => 'Square Root (100 numbers, 10 iterations)',
+            'name' => 'Square Root (100 numbers, 6 decimals)',
             'duration' => round($duration, 4),
             'ops_per_second' => round($opsPerSecond, 2),
         ];

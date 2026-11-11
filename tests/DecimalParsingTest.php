@@ -345,9 +345,9 @@ class DecimalParsingTest extends TestCase
     public function testSqrtOfSmallNumberDoesNotThrow(): void
     {
         $number = new RationalNumber(2, 1000000000);
-        $root = $number->sqrt();
+        $root = $number->sqrt(9);
 
-        $this->assertFalse($root->isZero());
-        $this->assertEqualsWithDelta(sqrt(2e-9), $root->getFloat(), 1e-15);
+        // sqrt(2e-9) = 4.4721359...e-5
+        $this->assertSame('44721/1000000000', $root->toString());
     }
 }

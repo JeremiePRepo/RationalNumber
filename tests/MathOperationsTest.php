@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace RationalNumber\Tests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use RationalNumber\Exception\IntegerOverflowException;
 use RationalNumber\RationalNumber;
 use InvalidArgumentException;
 
@@ -89,31 +91,31 @@ class MathOperationsTest extends TestCase
     public function testSqrtOfPerfectSquare(): void
     {
         $number = RationalNumber::fromFloat(4);
-        $result = $number->sqrt();
+        $result = $number->sqrt(6);
 
-        $this->assertEqualsWithDelta(2.0, $result->getFloat(), 0.001);
+        $this->assertSame('2/1', $result->toString());
     }
 
     public function testSqrtOfFraction(): void
     {
         $number = new RationalNumber(1, 4);  // 0.25
-        $result = $number->sqrt();
+        $result = $number->sqrt(6);
 
-        $this->assertEqualsWithDelta(0.5, $result->getFloat(), 0.001);
+        $this->assertSame('1/2', $result->toString());
     }
 
     public function testSqrtApproximation(): void
     {
         $number = RationalNumber::fromFloat(2);
-        $result = $number->sqrt(10);  // Precision parameter (iterations)
+        $result = $number->sqrt(6);
 
-        $this->assertEqualsWithDelta(1.41421356, $result->getFloat(), 0.0001);
+        $this->assertSame('707107/500000', $result->toString());  // 1.414214
     }
 
     public function testSqrtOfZero(): void
     {
         $number = RationalNumber::zero();
-        $result = $number->sqrt();
+        $result = $number->sqrt(6);
 
         $this->assertTrue($result->isZero());
     }
@@ -124,16 +126,58 @@ class MathOperationsTest extends TestCase
         $this->expectExceptionMessage("Cannot calculate square root of a negative number");
 
         $number = RationalNumber::fromFloat(-4);
-        $number->sqrt();
+        $number->sqrt(6);
     }
 
     public function testSqrtImmutability(): void
     {
         $original = RationalNumber::fromFloat(9);
-        $result = $original->sqrt();
+        $result = $original->sqrt(6);
 
         $this->assertEquals("9/1", $original->toString());
         $this->assertNotEquals($original->toString(), $result->toString());
+    }
+
+    /**
+     * @return iterable<string, array{RationalNumber, int, string}>
+     */
+    public static function sqrtProvider(): iterable
+    {
+        yield 'sqrt(2), 0 decimals' => [new RationalNumber(2), 0, '1/1'];
+        yield 'sqrt(2), 9 decimals' => [new RationalNumber(2), 9, '707106781/500000000'];
+        yield 'sqrt(1/3), 6 decimals' => [new RationalNumber(1, 3), 6, '11547/20000'];
+        yield 'exact tie 1.5 rounds up' => [new RationalNumber(9, 4), 0, '2/1'];
+        yield 'just below the tie' => [new RationalNumber(56, 25), 0, '1/1'];
+        yield 'PHP_INT_MAX, beyond float precision' => [new RationalNumber(PHP_INT_MAX), 0, '3037000500/1'];
+        yield 'tiny value rounds to zero' => [new RationalNumber(1, 1000000000), 2, '0/1'];
+    }
+
+    #[DataProvider('sqrtProvider')]
+    public function testSqrtIsRoundedToTheNearestDecimal(RationalNumber $value, int $decimals, string $expected): void
+    {
+        $this->assertSame($expected, $value->sqrt($decimals)->toString());
+    }
+
+    public function testSqrtRejectsInvalidDecimals(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Decimal places must be between 0 and 9.');
+
+        (new RationalNumber(2))->sqrt(10);
+    }
+
+    public function testSqrtRejectsNegativeDecimals(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        (new RationalNumber(2))->sqrt(-1);
+    }
+
+    public function testSqrtThrowsOverflowWhenTheScaledValueDoesNotFit(): void
+    {
+        $this->expectException(IntegerOverflowException::class);
+
+        (new RationalNumber(PHP_INT_MAX))->sqrt(9);
     }
 
     // ========== min() Tests ==========
@@ -258,9 +302,9 @@ class MathOperationsTest extends TestCase
     {
         $number = RationalNumber::fromFloat(16);
         $squared = $number->pow(2);
-        $root = $squared->sqrt(15);
+        $root = $squared->sqrt(0);
 
-        // sqrt(16^2) should be close to 16
-        $this->assertEqualsWithDelta(16.0, $root->getFloat(), 0.01);
+        // sqrt(16^2) is exactly 16
+        $this->assertSame('16/1', $root->toString());
     }
 }

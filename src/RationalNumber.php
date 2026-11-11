@@ -26,6 +26,11 @@ final readonly class RationalNumber implements \JsonSerializable
      */
     private const MAX_PERCENTAGE_DECIMALS = 16;
 
+    /**
+     * Largest number of decimal places for sqrt(): 10^(2 * 9) still fits in an int.
+     */
+    private const MAX_SQRT_DECIMALS = 9;
+
     private int $numerator;
     private int $denominator;
 
@@ -658,41 +663,53 @@ final readonly class RationalNumber implements \JsonSerializable
     }
 
     /**
-     * Calculate the square root of the rational number using Newton-Raphson method.
+     * Calculate the square root, rounded to a given number of decimal places.
      *
-     * Returns a rational approximation of the square root.
-     * The precision parameter controls the number of iterations (higher = more accurate).
-     * Note: Precision is limited to prevent overflow with very large fractions.
+     * The result is exact: it is the square root rounded to the nearest multiple of 10^-$decimals
+     * (halves up), computed with integers only. For example sqrt(2) with 6 decimals is
+     * 1414214/1000000, and the square root of a perfect square is exact.
      *
-     * @param int $precision Number of iterations for the approximation (default: 10, max: 10).
-     * @return RationalNumber A rational approximation of the square root.
-     * @throws InvalidArgumentException if attempting to take square root of a negative number.
+     * @param int $decimals Number of decimal places, from 0 to 9.
+     * @return RationalNumber The rounded square root, with denominator 10^$decimals (before reduction).
+     * @throws InvalidArgumentException if the number is negative or $decimals is out of range.
+     * @throws IntegerOverflowException if the number scaled by 10^(2 * $decimals) does not fit in an int.
      */
-    public function sqrt(int $precision = 10): RationalNumber
+    public function sqrt(int $decimals): RationalNumber
     {
         if ($this->numerator < 0) {
             throw new InvalidArgumentException("Cannot calculate square root of a negative number.");
         }
 
-        if ($this->isZero()) {
-            return self::zero();
+        if ($decimals < 0 || $decimals > self::MAX_SQRT_DECIMALS) {
+            throw new InvalidArgumentException("Decimal places must be between 0 and " . self::MAX_SQRT_DECIMALS . ".");
         }
 
-        // Limit precision to avoid overflow (max 10 iterations)
-        $precision = min($precision, 10);
+        // sqrt(x) * 10^d = sqrt(x * 10^(2d)). With X = x * 10^(2d) = N + rest / den (N integer),
+        // floor(sqrt(X)) = isqrt(N).
+        $scale = 10 ** (2 * $decimals);
+        $quotient = intdiv($this->numerator, $this->denominator);
+        self::checkMultiplicationOverflow($quotient, $scale, 'square root');
+        [$fraction, $rest] = self::mulDivMod($this->numerator % $this->denominator, $scale, $this->denominator);
+        if ($quotient * $scale > PHP_INT_MAX - $fraction) {
+            throw IntegerOverflowException::create("Operation would cause integer overflow during square root.");
+        }
+        $n = $quotient * $scale + $fraction;
 
-        // Use float-based Newton-Raphson for stability
-        $floatSqrt = sqrt($this->getFloat());
-        $x = $floatSqrt;
-        $thisFloat = $this->getFloat();
-
-        // Perform Newton-Raphson iterations in float space
-        for ($i = 0; $i < $precision; $i++) {
-            $x = ($x + $thisFloat / $x) / 2;
+        // Integer square root: the float estimate is corrected to be exact.
+        $root = (int) sqrt($n);
+        while ($root * $root > $n) {
+            $root--;
+        }
+        while ($root < self::SQRT_INT_MAX && ($root + 1) * ($root + 1) <= $n) {
+            $root++;
         }
 
-        // Convert final result to RationalNumber
-        return RationalNumber::fromFloat($x);
+        // Round to nearest: up when X >= (root + 1/2)^2 = root^2 + root + 1/4.
+        $excess = $n - $root * $root;
+        $roundUp = $excess > $root
+            || ($excess === $root && $rest >= intdiv($this->denominator, 4) + ($this->denominator % 4 === 0 ? 0 : 1));
+
+        return new self($roundUp ? $root + 1 : $root, 10 ** $decimals);
     }
 
     /**

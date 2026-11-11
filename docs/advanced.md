@@ -34,24 +34,22 @@ echo $final->getFloat();  // ≈ 1628.89
 
 ### Square Root
 
-The square root is computed using an iterative approximation method (Newton's method). The result is a rational approximation and may grow significantly in numerator/denominator size depending on the number of iterations.
+`sqrt(int $decimals)` returns the square root rounded to the nearest multiple of `10^-$decimals`
+(halves away from zero). The computation uses integer arithmetic only, so the result is exact
+to the requested number of decimal places. `$decimals` must be between 0 and 9.
 
 ```php
 use RationalNumber\RationalNumber;
 
-// Square root (returns rational approximation)
-$number = RationalNumber::fromFloat(4);
-$sqrt = $number->sqrt();
-echo $sqrt->getFloat();  // 2.0
+echo (new RationalNumber(4))->sqrt(0)->toString();     // "2/1"
+echo (new RationalNumber(1, 4))->sqrt(2)->toString();  // "1/2"
 
-// Higher precision for non-perfect squares
-$two = RationalNumber::fromFloat(2);
-$sqrt2 = $two->sqrt(20);  // 20 iterations
-echo $sqrt2->getFloat();  // ≈ 1.41421356
-
-// Warning: High iteration counts can produce very large numerators/denominators
-// Use with caution for non-perfect squares
+$sqrt2 = (new RationalNumber(2))->sqrt(6);
+echo $sqrt2->toString();  // "707107/500000" (1.414214)
 ```
+
+A negative number throws an `InvalidArgumentException`. If `value × 10^(2 × $decimals)` does not
+fit in a 64-bit integer, an `IntegerOverflowException` is thrown: lower `$decimals` for large values.
 
 ### Min and Max Operations
 
@@ -154,7 +152,7 @@ try {
 **Key points:**
 - Overflow detection applies to `multiply()`, `add()`, `subtract()` operations
 - `pow()` can also trigger overflow, especially with large exponents
-- `sqrt()` may produce very large numerators/denominators that can overflow
+- `sqrt($decimals)` throws when `value × 10^(2 × $decimals)` does not fit in an integer
 - Large intermediate values can overflow even if the final result would fit in memory
 - Throws `RationalNumber\Exception\IntegerOverflowException` (an `\OverflowException`) before
   the overflow occurs
