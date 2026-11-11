@@ -70,31 +70,31 @@ class RationalNumberTest extends TestCase
      *
      * @dataProvider decimalsSensitiveToTruncationProvider
      */
-    public function testFromFloatDoesNotTruncateDecimals(float $value, string $expected) {
-        $this->assertSame($expected, RationalNumber::fromFloat($value)->toString());
+    public function testFromFloatDoesNotTruncateDecimals(string $input, string $expected) {
+        $this->assertSame($expected, RationalNumber::fromFloat((float) $input)->toString());
     }
 
     /**
      * @dataProvider decimalsSensitiveToTruncationProvider
      */
-    public function testFromStringDoesNotTruncateDecimals(float $value, string $expected) {
-        $this->assertSame($expected, RationalNumber::fromString((string) $value)->toString());
+    public function testFromStringDoesNotTruncateDecimals(string $input, string $expected) {
+        $this->assertSame($expected, RationalNumber::fromString($input)->toString());
     }
 
     /**
-     * @return array<string, array{float, string}>
+     * @return array<string, array{string, string}>
      */
     public static function decimalsSensitiveToTruncationProvider(): array {
         return [
-            '0.29'  => [0.29, '29/100'],
-            '0.57'  => [0.57, '57/100'],
-            '1.15'  => [1.15, '23/20'],
-            '4.35'  => [4.35, '87/20'],
-            '9.95'  => [9.95, '199/20'],
-            '-0.29' => [-0.29, '-29/100'],
-            '-1.15' => [-1.15, '-23/20'],
-            '0.001' => [0.001, '1/1000'],
-            '1.005' => [1.005, '201/200'],
+            '0.29'  => ['0.29', '29/100'],
+            '0.57'  => ['0.57', '57/100'],
+            '1.15'  => ['1.15', '23/20'],
+            '4.35'  => ['4.35', '87/20'],
+            '9.95'  => ['9.95', '199/20'],
+            '-0.29' => ['-0.29', '-29/100'],
+            '-1.15' => ['-1.15', '-23/20'],
+            '0.001' => ['0.001', '1/1000'],
+            '1.005' => ['1.005', '201/200'],
         ];
     }
 

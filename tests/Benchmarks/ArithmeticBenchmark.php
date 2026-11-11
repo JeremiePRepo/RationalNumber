@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace RationalNumber\Benchmarks;
+namespace RationalNumber\Tests\Benchmarks;
 
 use RationalNumber\RationalNumber;
 
@@ -43,11 +43,14 @@ class ArithmeticBenchmark
     {
         $start = microtime(true);
         
-        $result = RationalNumber::one();
-        $factor = RationalNumber::fromFloat(1.01); // Small multiplier
-        
+        // Fixed operands: accumulating the product (1.01^n = 101^n / 100^n)
+        // would overflow 64-bit integers after a few iterations.
+        $value = RationalNumber::fromFloat(123.45);
+        $factor = RationalNumber::fromFloat(1.01);
+        $result = $value;
+
         for ($i = 0; $i < 10000; $i++) {
-            $result = $result->multiply($factor);
+            $result = $value->multiply($factor);
         }
         
         $duration = microtime(true) - $start;
@@ -68,11 +71,13 @@ class ArithmeticBenchmark
     {
         $start = microtime(true);
         
-        $result = RationalNumber::fromFloat(10000);
+        // Fixed operands: accumulating the quotient (2^n / 3^n) would overflow.
+        $value = RationalNumber::fromFloat(10000);
         $divisor = new RationalNumber(3, 2); // 1.5
-        
+        $result = $value;
+
         for ($i = 0; $i < 10000; $i++) {
-            $result = $result->divideBy($divisor);
+            $result = $value->divideBy($divisor);
         }
         
         $duration = microtime(true) - $start;
@@ -118,15 +123,19 @@ class ArithmeticBenchmark
     {
         $start = microtime(true);
         
+        // Each iteration starts from the same operands: feeding the result back
+        // (multiplying by 8/9 every round) would overflow 64-bit integers.
         $a = RationalNumber::fromFloat(10.5);
         $b = RationalNumber::fromFloat(2.5);
+        $twoThirds = new RationalNumber(2, 3);
+        $threeQuarters = new RationalNumber(3, 4);
         $result = RationalNumber::zero();
-        
+
         for ($i = 0; $i < 2500; $i++) {
-            $result = $result->add($a);
-            $result = $result->subtract($b);
-            $result = $result->multiply(new RationalNumber(2, 3));
-            $result = $result->divideBy(new RationalNumber(3, 4));
+            $result = $a->add($b)
+                ->subtract($b)
+                ->multiply($twoThirds)
+                ->divideBy($threeQuarters);
         }
         
         $duration = microtime(true) - $start;

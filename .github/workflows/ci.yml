@@ -43,6 +43,10 @@ jobs:
       
       - name: Run test suite
         run: vendor/bin/phpunit --testdox
+
+      - name: Run test suite with non-default float precision
+        # Conversions must not depend on the precision / serialize_precision ini settings.
+        run: php -d precision=17 -d serialize_precision=17 vendor/bin/phpunit
       
       - name: Test summary
         if: always()

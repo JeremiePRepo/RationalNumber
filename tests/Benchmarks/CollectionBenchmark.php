@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace RationalNumber\Benchmarks;
+namespace RationalNumber\Tests\Benchmarks;
 
 use RationalNumber\RationalNumber;
 use RationalNumber\Collection\RationalCollection;

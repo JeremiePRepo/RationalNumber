@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace RationalNumber\Benchmarks;
+namespace RationalNumber\Tests\Benchmarks;
 
 use RationalNumber\RationalNumber;
 
@@ -143,7 +143,7 @@ class ComplexOperationsBenchmark
         for ($i = 0; $i < 10000; $i++) {
             $base->increaseByPercentage('20%');
             $base->decreaseByPercentage('15%');
-            $base->percentageOf('50%');
+            $base->toPercentage();
         }
         
         $duration = microtime(true) - $start;

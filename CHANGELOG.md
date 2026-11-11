@@ -3,16 +3,43 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [2.10.0] - 2026-11-11
 
 ### Fixed
 
-- **`fromFloat()` truncated decimals**: the numerator was computed with `(int)($value * 10^n)`,
-  so floating-point products landing just below the exact integer lost one unit
-  (e.g. `fromFloat(0.29)` returned `7/25` instead of `29/100`, `1.15` returned `57/50`).
-  The value is now rounded. This also fixes `fromString()` and `fromPercentage()` for decimal
-  inputs, and the large-exponent scientific notation path (e.g. `1.15e15`).
-  - **Added 20 regression tests**
+- **Exact decimal conversion**: `fromFloat()`, `fromString()` and `fromPercentage()` no longer
+  lose or alter digits.
+  - `fromFloat()` truncated decimals: `fromFloat(0.29)` returned `7/25` instead of `29/100`,
+    `1.15` returned `57/50`, `1.15e15` returned `1140000000000000/1`.
+  - `fromString()` and `fromPercentage()` now parse decimal and scientific strings digit by digit
+    instead of going through a float (`fromString('123456789012345.67')` is exact).
+  - `fromFloat()` uses the shortest round-trip representation of the float, so results no longer
+    depend on the `precision` / `serialize_precision` ini settings (e.g. with `precision=17`,
+    `fromPercentage('57%')` returned `7124999999999999/12500000000000000`), and no digits are
+    dropped (`fromFloat(99999999999999.5)` returned `100000000000000/1`).
+  - `increaseByPercentage()` / `decreaseByPercentage()` (and the deprecated `PercentageCalculator`)
+    use the exact percentage parsing.
+- **False overflow error**: `fromFloat(1.2345e16)` and `fromFloat(123456789012345.67)` threw an
+  `ArithmeticError` although the value fits in an integer.
+- **`composer benchmark` never ran**: the benchmark classes used the `RationalNumber\Benchmarks`
+  namespace, which no autoload rule covered (now `RationalNumber\Tests\Benchmarks`, matching the
+  existing PSR-4 mapping). The multiplication, division and mixed benchmarks accumulated their
+  result until integer overflow, and the percentage benchmark called a non-existent
+  `percentageOf()` method.
+
+### Changed
+
+- Invalid inputs now throw instead of silently returning `0/1`:
+  - `fromFloat(INF)`, `fromFloat(-INF)`, `fromFloat(NAN)` throw `InvalidArgumentException`.
+  - `fromString('1e400')`, `fromString('1e-400')` throw `ArithmeticError` (overflow).
+  - `fromPercentage('abc%')` (and `increaseByPercentage('abc%')`, etc.) throw `InvalidArgumentException`.
+  - `fromFloat(1.5e-20)` throws `ArithmeticError` (too small to be represented).
+- `fromFloat()` rounds values whose exact decimal does not fit in 64-bit integers to the largest
+  number of significant digits that fits (at most 18 decimal places), instead of an arbitrary
+  15-decimal cap. `fromString()` stays strict and throws in that case.
+- CI also runs the test suite with `precision=17` and `serialize_precision=17`.
+- Removed the private `fromScientificNotation()` helper (now handled by the decimal parser).
+- **Added 76 tests** (`DecimalParsingTest` and regression tests in `RationalNumberTest`)
 
 ## [2.9.0] - 2026-02-16
 

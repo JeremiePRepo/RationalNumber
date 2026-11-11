@@ -51,9 +51,7 @@ class PercentageCalculator
             E_USER_DEPRECATED
         );
         
-        $percentage = rtrim($percentage, '%');
-        $value = (float) $percentage / 100;
-        return RationalNumber::fromFloat($value);
+        return RationalNumber::fromPercentage($percentage);
     }
 
     /**
@@ -71,10 +69,7 @@ class PercentageCalculator
             E_USER_DEPRECATED
         );
         
-        $percentage = rtrim($percentage, '%');
-        $percentageValue = (float) $percentage / 100;
-        
-        $increaseFraction = $number->multiply(RationalNumber::fromFloat($percentageValue));
+        $increaseFraction = $number->multiply(RationalNumber::fromPercentage($percentage));
         return $number->add($increaseFraction);
     }
 
@@ -93,10 +88,7 @@ class PercentageCalculator
             E_USER_DEPRECATED
         );
         
-        $percentage = rtrim($percentage, '%');
-        $percentageValue = (float) $percentage / 100;
-        
-        $decreaseFraction = $number->multiply(RationalNumber::fromFloat($percentageValue));
+        $decreaseFraction = $number->multiply(RationalNumber::fromPercentage($percentage));
         return $number->subtract($decreaseFraction);
     }
 

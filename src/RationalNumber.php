@@ -39,11 +39,18 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
     
     /**
      * Create a RationalNumber object from a float or int value.
-     * Supports standard decimal notation and scientific notation (e.g., 1e-10, 1.5e20).
-     * 
+     *
+     * The float is converted from its shortest decimal representation (the one PHP uses with
+     * serialize_precision = -1, e.g. 0.29 => 29/100), independently of the `precision` and
+     * `serialize_precision` ini settings. Scientific notation (e.g. 1e-10, 1.5e20) is supported.
+     *
+     * If that exact decimal value does not fit in 64-bit integers (e.g. 1.2345678901234568e-5),
+     * it is rounded to the largest number of significant digits that fits.
+     *
      * @param float|int $value The scalar value to create a RationalNumber object from.
      * @return RationalNumber The RationalNumber object created from the scalar value.
-     * @throws \ArithmeticError if the conversion would cause integer overflow.
+     * @throws InvalidArgumentException if the value is INF or NAN.
+     * @throws \ArithmeticError if the value is too large, or too small to be represented without becoming zero.
      */
     public static function fromFloat($value): RationalNumber
     {
@@ -51,29 +58,33 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
         if (is_int($value)) {
             return new self($value, 1);
         }
-        
-        // Detect and handle scientific notation
-        $stringValue = (string) $value;
-        if (stripos($stringValue, 'e') !== false) {
-            return self::fromScientificNotation($value);
+
+        if (!is_finite($value)) {
+            throw new InvalidArgumentException("Cannot create RationalNumber from INF or NAN.");
         }
-        
-        // Handle standard decimal notation
-        $denominator = 1;
-        $decimalPart = strrchr($stringValue, ".");
-        
-        if ($decimalPart !== false) {
-            $decimalPlaces = strlen(substr($decimalPart, 1));
-            if ($decimalPlaces > 0) {
-                $denominator = 10 ** $decimalPlaces;
+
+        // var_export() follows serialize_precision; -1 gives the shortest round-trip representation.
+        // It is already -1 by default, so only switch it when needed.
+        $previousPrecision = ini_get('serialize_precision');
+        if ($previousPrecision === '-1') {
+            $representation = var_export($value, true);
+        } else {
+            ini_set('serialize_precision', '-1');
+            try {
+                $representation = var_export($value, true);
+            } finally {
+                if ($previousPrecision !== false) {
+                    ini_set('serialize_precision', $previousPrecision);
+                }
             }
         }
 
-        // Convert the scalar value to a rational number.
-        // Round instead of truncating: $value * $denominator is computed in floating point
-        // and may land just below the exact integer (e.g. 0.29 * 100 = 28.999999999999996).
-        $numerator = (int) round($value * $denominator);
-        return new RationalNumber($numerator, $denominator);
+        $parts = self::parseDecimal($representation);
+        if ($parts === null) {
+            throw new \LogicException("Unexpected float representation '{$representation}'.");
+        }
+
+        return self::fromDecimalParts($parts[0], $parts[1], $parts[2], true);
     }
 
     /**
@@ -123,10 +134,11 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
             return new self($numerator, $denominator);
         }
         
-        // Try to parse as numeric (decimal, integer, or scientific notation)
-        if (is_numeric($input)) {
-            // Delegate to fromFloat which handles decimals, integers, and scientific notation
-            return self::fromFloat((float)$input);
+        // Try to parse as an exact decimal (decimal, integer, or scientific notation),
+        // without going through a float.
+        $parts = self::parseDecimal($input);
+        if ($parts !== null) {
+            return self::fromDecimalParts($parts[0], $parts[1], $parts[2], false);
         }
         
         // Invalid format
@@ -274,14 +286,20 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
 
     /**
      * Create a RationalNumber object from a percentage value.
+     *
+     * The value is parsed exactly (no floating point): "57%" => 57/100, "12.5 %" => 1/8.
+     * The percentage sign is optional.
+     *
      * @param string $percentage The percentage value as a string (e.g., "50%").
      * @return RationalNumber The RationalNumber object created from the percentage value.
+     * @throws InvalidArgumentException if the value is not a valid number.
+     * @throws \ArithmeticError if the conversion would cause integer overflow.
      */
     public static function fromPercentage(string $percentage): RationalNumber
     {
-        $percentage = rtrim($percentage, '%'); // Remove the percentage sign if present.
-        $value = (float) $percentage / 100;
-        return RationalNumber::fromFloat($value);
+        // Remove the percentage sign if present.
+        $value = trim(rtrim(trim($percentage), '%'));
+        return self::fromString($value)->multiply(new self(1, 100));
     }
 
     /**
@@ -309,11 +327,8 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
      */
     public function increaseByPercentage(string $percentage): RationalNumber
     {
-        $percentage = rtrim($percentage, '%'); // Remove the percentage sign if present.
-        $percentageValue = (float) $percentage / 100;
-
         // Calculate the increase as a fraction of the current value.
-        $increaseFraction = $this->multiply(RationalNumber::fromFloat($percentageValue));
+        $increaseFraction = $this->multiply(self::fromPercentage($percentage));
 
         // Add the increase to the current value.
         $increasedRationalNumber = $this->add($increaseFraction);
@@ -328,11 +343,8 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
      */
     public function decreaseByPercentage(string $percentage): RationalNumber
     {
-        $percentage = rtrim($percentage, '%'); // Remove the percentage sign if present.
-        $percentageValue = (float) $percentage / 100;
-
         // Calculate the decrease as a fraction of the current value.
-        $decreaseFraction = $this->multiply(RationalNumber::fromFloat($percentageValue));
+        $decreaseFraction = $this->multiply(self::fromPercentage($percentage));
 
         // Subtract the decrease from the current value.
         $decreasedRationalNumber = $this->subtract($decreaseFraction);
@@ -791,88 +803,136 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
     }
 
     /**
-     * Convert a float in scientific notation to a RationalNumber.
-     * 
-     * @param float $value The float value in scientific notation.
-     * @return RationalNumber The resulting rational number.
-     * @throws \ArithmeticError if conversion would cause overflow.
+     * Largest power of ten that fits in a 64-bit integer (10^18).
      */
-    private static function fromScientificNotation(float $value): RationalNumber
-    {
-        // Handle zero specially
-        if ($value == 0.0) {
-            return new self(0, 1);
-        }
-        
-        // Parse scientific notation: extract mantissa and exponent
-        // e.g., "1.5e-10" or "2.3E20"
-        $stringValue = strtolower((string)$value);
-        $parts = explode('e', $stringValue);
-        
-        if (count($parts) !== 2) {
-            // Fallback to standard conversion if parsing fails
-            return self::fromFloat((float)$stringValue);
-        }
-        
-        $mantissa = (float)$parts[0];
-        $exponent = (int)$parts[1];
-        
-        // For negative exponents: mantissa / 10^|exponent|
-        // For positive exponents: mantissa * 10^exponent
-        if ($exponent < 0) {
-            // Small numbers: 1.5e-10 = 15 / 10^11
-            $decimalPlaces = abs($exponent);
-            
-            // Count decimal places in mantissa
-            $mantissaStr = (string)$mantissa;
-            if (strpos($mantissaStr, '.') !== false) {
-                $pos = strrchr($mantissaStr, '.');
-                if ($pos !== false) {
-                    $mantissaDecimals = strlen(substr($pos, 1));
-                    $decimalPlaces += $mantissaDecimals;
-                }
-            }
-            
-            // Limit precision to avoid overflow
-            $decimalPlaces = min($decimalPlaces, 15);
-            $denominator = 10 ** $decimalPlaces;
-            $numerator = (int)round($value * $denominator);
-            
-            return new self($numerator, $denominator);
-        } else {
-            // Large numbers: 1.5e20 = 15 * 10^19
-            // Calculate numerator and check for overflow
-            $multiplier = 10 ** $exponent;
-            
-            // Extract decimal places from mantissa
-            $mantissaStr = (string)$mantissa;
-            $denominator = 1;
-            
-            if (strpos($mantissaStr, '.') !== false) {
-                $pos = strrchr($mantissaStr, '.');
-                if ($pos !== false) {
-                    $decimalPlaces = strlen(substr($pos, 1));
-                    $denominator = 10 ** $decimalPlaces;
-                    $mantissa = $mantissa * $denominator;
-                }
-            }
-            
-            // Round instead of truncating (e.g. 1.15 * 100 = 114.99999999999999)
-            $numerator = (int) round($mantissa);
+    private const MAX_POWER_OF_TEN = 18;
 
-            // Check if multiplying by 10^exponent would overflow
-            if ($numerator != 0 && abs($multiplier) > PHP_INT_MAX / abs($numerator)) {
-                throw new \ArithmeticError(
-                    "Scientific notation conversion would cause integer overflow. " .
-                    "Value too large for integer representation. " .
-                    (extension_loaded('gmp') 
-                        ? "Consider using GMP extension for arbitrary precision."
-                        : "Consider installing GMP extension for larger numbers.")
-                );
-            }
-            
-            return new self($numerator * $multiplier, $denominator);
+    /**
+     * Split a decimal string (e.g. "-12.50", ".5", "1.5e-3", "1.0E+25") into an exact
+     * sign / significant digits / base-10 exponent triple, without using floats.
+     *
+     * The value is $sign * $digits * 10^$exponent. Leading and trailing zeros are removed
+     * from $digits (an empty $digits means zero).
+     *
+     * @param string $input The decimal string to parse.
+     * @return array{int, string, int}|null [sign, digits, exponent], or null if the format is invalid.
+     */
+    private static function parseDecimal(string $input): ?array
+    {
+        if (!preg_match('/^([+-]?)(\d*)(?:\.(\d*))?(?:[eE]([+-]?\d+))?$/', $input, $matches)) {
+            return null;
         }
+
+        $integerPart = $matches[2];
+        $fractionalPart = $matches[3] ?? '';
+        $exponentPart = $matches[4] ?? '';
+
+        // At least one digit is required in the mantissa ("." or "e5" are invalid).
+        if ($integerPart === '' && $fractionalPart === '') {
+            return null;
+        }
+
+        $sign = $matches[1] === '-' ? -1 : 1;
+
+        // Clamp absurd exponents so the arithmetic below stays in integer range;
+        // any value this large or small overflows anyway (or is zero).
+        $exponent = 0;
+        if ($exponentPart !== '') {
+            $exponentDigits = ltrim($exponentPart, '+-0');
+            $exponent = strlen($exponentDigits) > 6 ? 1000000 : (int) $exponentDigits;
+            if ($exponentPart[0] === '-') {
+                $exponent = -$exponent;
+            }
+        }
+
+        $digits = ltrim($integerPart . $fractionalPart, '0');
+        $exponent -= strlen($fractionalPart);
+
+        // Trailing zeros only scale the value: move them into the exponent.
+        $trimmedDigits = rtrim($digits, '0');
+        $exponent += strlen($digits) - strlen($trimmedDigits);
+
+        return [$sign, $trimmedDigits, $exponent];
+    }
+
+    /**
+     * Build a RationalNumber from the exact decimal parts returned by parseDecimal().
+     *
+     * @param int $sign 1 or -1.
+     * @param string $digits Significant digits without leading/trailing zeros ('' means zero).
+     * @param int $exponent Base-10 exponent applied to $digits.
+     * @param bool $allowRounding When the denominator would not fit in an integer, round to fewer
+     *                            significant digits instead of throwing (used for floats).
+     * @return RationalNumber The resulting rational number.
+     * @throws \ArithmeticError if the value cannot be represented with 64-bit integers.
+     */
+    private static function fromDecimalParts(int $sign, string $digits, int $exponent, bool $allowRounding): RationalNumber
+    {
+        if ($digits === '') {
+            return self::zero();
+        }
+
+        if ($exponent >= 0) {
+            // Integer value: digits followed by $exponent zeros.
+            $integerDigits = strlen($digits) + $exponent <= 19
+                ? $digits . str_repeat('0', $exponent)
+                : null;
+
+            if ($integerDigits === null || !self::fitsInInt($integerDigits)) {
+                throw new \ArithmeticError(self::overflowMessage(
+                    "Integer overflow: the value is too large for integer representation."
+                ));
+            }
+
+            return new self($sign * (int) $integerDigits, 1);
+        }
+
+        $decimalPlaces = -$exponent;
+        if ($decimalPlaces <= self::MAX_POWER_OF_TEN && self::fitsInInt($digits)) {
+            return new self($sign * (int) $digits, 10 ** $decimalPlaces);
+        }
+
+        if (!$allowRounding) {
+            throw new \ArithmeticError(self::overflowMessage(
+                "Integer overflow: the value has too many digits to be represented exactly."
+            ));
+        }
+
+        // Drop the least significant digits (rounding half up) until both the numerator
+        // and the denominator fit in an integer.
+        $dropped = max($decimalPlaces - self::MAX_POWER_OF_TEN, strlen($digits) - self::MAX_POWER_OF_TEN, 0);
+        $kept = (string) substr($digits, 0, max(strlen($digits) - $dropped, 0));
+        $nextDigit = $dropped <= strlen($digits) ? ($digits[strlen($digits) - $dropped] ?? '0') : '0';
+        $rounded = (int) ($kept === '' ? '0' : $kept) + ($nextDigit >= '5' ? 1 : 0);
+
+        if ($rounded === 0) {
+            throw new \ArithmeticError(
+                "Integer overflow: the value is too small to be represented without becoming zero."
+            );
+        }
+
+        return self::fromDecimalParts($sign, (string) $rounded, $exponent + $dropped, false);
+    }
+
+    /**
+     * Check whether a string of decimal digits (no sign) fits in a PHP integer.
+     */
+    private static function fitsInInt(string $digits): bool
+    {
+        $length = strlen($digits);
+        $max = (string) PHP_INT_MAX;
+
+        return $length < strlen($max) || ($length === strlen($max) && strcmp($digits, $max) <= 0);
+    }
+
+    /**
+     * Append the GMP hint to an overflow message.
+     */
+    private static function overflowMessage(string $message): string
+    {
+        return $message . ' ' . (extension_loaded('gmp')
+            ? "Consider using the GMP extension for arbitrary precision arithmetic."
+            : "Consider installing the GMP extension for handling larger numbers.");
     }
 
     /**
