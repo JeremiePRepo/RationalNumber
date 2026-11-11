@@ -24,7 +24,7 @@ This guide compares `RationalNumber` with alternative PHP libraries for precise 
 | **Performance** | Fast | Medium | Very fast | Slow | Very fast |
 | **Immutability** | ✅ Yes | ✅ Yes | ❌ No | ❌ No | ✅ Yes |
 | **Type Safety** | ✅ Strong | ✅ Strong | ⚠️ Weak | ⚠️ Weak | ⚠️ Weak |
-| **PHP Version** | 8.3+ | 8.1+ | Any | Any | Any |
+| **PHP Version** | 8.4+ | 8.1+ | Any | Any | Any |
 | **Installation** | Composer | Composer | System | System | Built-in |
 | **Maintenance** | Active | Active | Stable | Stable | N/A |
 
@@ -41,7 +41,7 @@ This guide compares `RationalNumber` with alternative PHP libraries for precise 
 - ✅ **Simple API**: Intuitive, object-oriented interface
 - ✅ **Exact fractions**: `1/3` stays as `1/3`, not `0.333...`
 - ✅ **Immutable**: All operations return new instances (safe concurrency)
-- ✅ **Type safety**: Full PHP 8.3+ type hints and strict types
+- ✅ **Type safety**: Full PHP 8.4+ type hints and strict types
 - ✅ **Rich features**: Collections, JSON serialization, percentage operations
 - ✅ **Well-tested**: 231 tests with 499 assertions
 - ✅ **Clear errors**: Overflow protection with helpful messages

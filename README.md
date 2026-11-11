@@ -1,6 +1,6 @@
 # RationalNumber
 
-![PHP Version](https://img.shields.io/badge/PHP-8.3%2B-blue)
+![PHP Version](https://img.shields.io/badge/PHP-8.4%2B-blue)
 ![Tests](https://img.shields.io/badge/tests-368%20passing-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![CI](https://github.com/JeremiePRepo/RationalNumber/actions/workflows/ci.yml/badge.svg)
@@ -62,7 +62,7 @@ Perfect for financial calculations, scientific computing, and anywhere precision
 
 ## Requirements
 
-- PHP 8.3 or later
+- PHP 8.4 or later
 
 **Performance note:** Rational numbers are slower than native floats due to normalization and overflow checks. Use them when precision matters more than raw speed.
 
@@ -260,7 +260,7 @@ Coverage includes:
 - Rounding operations
 - Percentage calculations
 - JSON serialization and collections
-- PHP 8.3+ compatibility
+- PHP 8.4+ compatibility
 
 ## Creating Numbers
 

@@ -205,7 +205,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.4'
           coverage: none
       - run: composer install
       - run: composer benchmark
