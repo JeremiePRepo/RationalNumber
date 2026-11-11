@@ -7,7 +7,7 @@ This document covers all percentage-related operations available in the Rational
 - [Converting to Percentage](#converting-to-percentage)
 - [Creating from Percentage](#creating-from-percentage)
 - [Calculations](#calculations)
-- [Legacy PercentageCalculator](#legacy-percentagecalculator)
+- [PercentageCalculator (removed in 3.0)](#percentagecalculator-removed-in-30)
 
 ## Converting to Percentage
 
@@ -153,57 +153,17 @@ $curvedPercentage = $curved->divideBy($maxScore)->toPercentage(1);
 echo "Curved Score: " . $curvedPercentage;  // "89.3%"
 ```
 
-## Legacy PercentageCalculator
+## PercentageCalculator (removed in 3.0)
 
-**Note:** The `PercentageCalculator` class is deprecated. Use the convenience methods on `RationalNumber` instances instead (shown above).
+The `PercentageCalculator` class, deprecated since 2.x, was removed in 3.0. Use the methods on
+`RationalNumber` shown above:
 
-For backward compatibility, `PercentageCalculator` still exists but will trigger deprecation warnings:
+| 2.x | 3.0 |
+|-----|-----|
+| `$calculator->toPercentage($n, 2)` | `$n->toPercentage(2)` |
+| `$calculator->fromPercentage("75%")` | `RationalNumber::fromPercentage("75%")` |
+| `$calculator->increaseBy($n, "10%")` | `$n->increaseByPercentage("10%")` |
+| `$calculator->decreaseBy($n, "10%")` | `$n->decreaseByPercentage("10%")` |
+| `$calculator->percentageOf($part, $whole)` | `$part->divideBy($whole)->toPercentage()` |
 
-```php
-use RationalNumber\RationalNumber;
-use RationalNumber\Calculator\PercentageCalculator;
-
-// Deprecated: This will trigger E_USER_DEPRECATED warnings
-
-$calculator = new PercentageCalculator();
-
-// Convert to percentage
-$half = new RationalNumber(1, 2);
-echo $calculator->toPercentage($half, 2);  // "50.00%"
-
-// Create from percentage
-$number = $calculator->fromPercentage("75%");
-echo $number->toString();  // "3/4"
-
-// Increase by percentage
-$hundred = new RationalNumber(100);
-$result = $calculator->increaseBy($hundred, "10%");
-echo $result->getFloat();  // 110
-
-// Decrease by percentage
-$twoHundred = new RationalNumber(200);
-$result = $calculator->decreaseBy($twoHundred, "25%");
-echo $result->getFloat();  // 150
-
-// Calculate what percentage one number is of another
-$threeFourths = new RationalNumber(3, 4);
-$one = RationalNumber::one();
-echo $calculator->percentageOf($threeFourths, $one);  // "75.00%"
-```
-
-**Migration Guide:**
-
-Replace deprecated calculator methods with the new direct methods:
-
-```php
-// Old (deprecated)
-$calculator = new PercentageCalculator();
-$result = $calculator->toPercentage($number, 2);
-$result = $calculator->increaseBy($number, "10%");
-$result = $calculator->decreaseBy($number, "10%");
-
-// New (recommended)
-$result = $number->toPercentage(2);
-$result = $number->increaseByPercentage("10%");
-$result = $number->decreaseByPercentage("10%");
-```
+See [UPGRADE-3.0.md](../UPGRADE-3.0.md).

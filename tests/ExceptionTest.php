@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace RationalNumber\Tests;
 
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use PHPUnit\Framework\TestCase;
-use RationalNumber\Calculator\PercentageCalculator;
 use RationalNumber\Collection\RationalCollection;
 use RationalNumber\Exception\DivisionByZeroException;
 use RationalNumber\Exception\EmptyCollectionException;
@@ -121,14 +119,6 @@ class ExceptionTest extends TestCase
         }
 
         $this->fail("Expected {$expectedClass} to be thrown.");
-    }
-
-    #[IgnoreDeprecations]
-    public function testPercentageOfZeroThrowsDivisionByZero(): void
-    {
-        $this->expectException(DivisionByZeroException::class);
-
-        (new PercentageCalculator())->percentageOf((new RationalNumber(1)), RationalNumber::zero());
     }
 
     public function testOverflowMessageMentionsGmp(): void

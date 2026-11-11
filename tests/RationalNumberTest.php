@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RationalNumber\Tests;
 
-use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use PHPUnit\Framework\TestCase;
 use RationalNumber\RationalNumber;
 
@@ -52,17 +51,6 @@ class RationalNumberTest extends TestCase
         $result = $number1->divideBy($number2);
         $this->assertEquals("3/2", $result->toString());
         $this->assertEqualsWithDelta(1.5, $result->getFloat(), 1e-12);
-    }
-
-    #[IgnoreDeprecations]
-    public function testDivisionFrom(): void
-    {
-        $this->expectUserDeprecationMessageMatches('/divideFrom\(\) is deprecated since 2\.11.*divideBy/');
-        $number1 = new RationalNumber(3, 4);
-        $number2 = new RationalNumber(1, 2);
-        $result = $number1->divideFrom($number2);
-        $this->assertEquals("2/3", $result->toString());
-        $this->assertEqualsWithDelta(0.6666666666666666, $result->getFloat(), 1e-12);
     }
 
     public function testFromFloat(): void
@@ -318,16 +306,6 @@ class RationalNumberTest extends TestCase
         $number->divideBy($zero);
     }
 
-    #[IgnoreDeprecations]
-    public function testDivideFromZeroThrowsException(): void
-    {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage("Cannot divide by zero.");
-        $zero = new RationalNumber(0, 1);
-        $number = new RationalNumber(5, 1);
-        $zero->divideFrom($number);
-    }
-
     public function testNegativeDenominatorIsNormalized(): void
     {
         $number = new RationalNumber(3, -4);
@@ -356,17 +334,6 @@ class RationalNumberTest extends TestCase
         $notInteger = new RationalNumber(5, 2);
         $this->assertTrue($integer->isInteger());
         $this->assertFalse($notInteger->isInteger());
-    }
-
-    #[IgnoreDeprecations]
-    public function testReduce(): void
-    {
-        $number = new RationalNumber(6, 8);
-        $this->expectUserDeprecationMessageMatches('/reduce\(\) is deprecated since 2\.11.*remove the call/');
-        // Already normalized in the constructor: reduce() returns the same value.
-        $this->assertEquals("3/4", $number->toString());
-        $reduced = $number->reduce();
-        $this->assertEquals("3/4", $reduced->toString());
     }
 
     public function testMagicToString(): void

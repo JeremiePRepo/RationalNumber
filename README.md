@@ -275,13 +275,12 @@ $number = RationalNumber::fromPercentage("50%");
 $number = RationalNumber::fromString("3/4");
 ```
 
-`RationalNumberFactory` is deprecated since 2.11 and removed in 3.0.
+## Upgrading from 2.x
 
-## Upgrading to 3.0
-
-Version 2.11 deprecates everything 3.0 removes (the factory, `PercentageCalculator`, the
-`Contract` interfaces, `reduce()`, `divideFrom()`, collection mutations). Each deprecation
-warning names its replacement. See [UPGRADE-3.0.md](UPGRADE-3.0.md) and the [CHANGELOG](CHANGELOG.md).
+3.0 removes the factory, `PercentageCalculator`, the `Contract` interfaces, `reduce()`,
+`divideFrom()` and collection mutations. Upgrade to 2.11 first: each of them triggers a
+deprecation warning that names its replacement. See [UPGRADE-3.0.md](UPGRADE-3.0.md) and the
+[CHANGELOG](CHANGELOG.md).
 
 ## License
 

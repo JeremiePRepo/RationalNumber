@@ -4,21 +4,17 @@ declare(strict_types=1);
 
 namespace RationalNumber;
 
-use RationalNumber\Contract\ArithmeticOperations;
-use RationalNumber\Contract\Comparable;
-use RationalNumber\Contract\NumericValue;
 use RationalNumber\Exception\DivisionByZeroException;
 use RationalNumber\Exception\IntegerOverflowException;
 use RationalNumber\Exception\InvalidArgumentException;
 use RationalNumber\Internal\DecimalParser;
-use RationalNumber\Internal\Deprecation;
 
 /**
  * Represents an immutable rational number (fraction) with precise arithmetic operations.
  *
  * Implements JsonSerializable for seamless JSON encoding/decoding support.
  */
-final readonly class RationalNumber implements ArithmeticOperations, Comparable, NumericValue, \JsonSerializable
+final readonly class RationalNumber implements \JsonSerializable
 {
     /**
      * floor(sqrt(PHP_INT_MAX)): the product of two integers up to this value (in absolute value) fits in an int.
@@ -183,16 +179,12 @@ final readonly class RationalNumber implements ArithmeticOperations, Comparable,
 
     /**
      * Multiply the current rational number by another RationalNumber object.
-     * @param ArithmeticOperations $number The RationalNumber object to multiply with.
+     * @param RationalNumber $number The RationalNumber object to multiply with.
      * @return RationalNumber The result of the multiplication as a new RationalNumber object.
      * @throws IntegerOverflowException if the operation would cause integer overflow.
      */
-    public function multiply(ArithmeticOperations $number): RationalNumber
+    public function multiply(RationalNumber $number): RationalNumber
     {
-        if (!$number instanceof RationalNumber) {
-            throw new InvalidArgumentException("Must be a RationalNumber instance.");
-        }
-
         // Check for potential overflow before multiplication
         self::checkMultiplicationOverflow($this->numerator, $number->getNumerator(), 'numerator multiplication');
         self::checkMultiplicationOverflow($this->denominator, $number->getDenominator(), 'denominator multiplication');
@@ -204,16 +196,12 @@ final readonly class RationalNumber implements ArithmeticOperations, Comparable,
 
     /**
      * Add the current rational number to another RationalNumber object.
-     * @param ArithmeticOperations $number The RationalNumber object to add.
+     * @param RationalNumber $number The RationalNumber object to add.
      * @return RationalNumber The result of the addition as a new RationalNumber object.
      * @throws IntegerOverflowException if the operation would cause integer overflow.
      */
-    public function add(ArithmeticOperations $number): RationalNumber
+    public function add(RationalNumber $number): RationalNumber
     {
-        if (!$number instanceof RationalNumber) {
-            throw new InvalidArgumentException("Must be a RationalNumber instance.");
-        }
-
         $otherNumerator = $number->getNumerator();
         $otherDenominator = $number->getDenominator();
 
@@ -235,16 +223,12 @@ final readonly class RationalNumber implements ArithmeticOperations, Comparable,
 
     /**
      * Subtract another RationalNumber object from the current rational number.
-     * @param ArithmeticOperations $number The RationalNumber object to subtract.
+     * @param RationalNumber $number The RationalNumber object to subtract.
      * @return RationalNumber The result of the subtraction as a new RationalNumber object.
      * @throws IntegerOverflowException if the operation would cause integer overflow.
      */
-    public function subtract(ArithmeticOperations $number): RationalNumber
+    public function subtract(RationalNumber $number): RationalNumber
     {
-        if (!$number instanceof RationalNumber) {
-            throw new InvalidArgumentException("Must be a RationalNumber instance.");
-        }
-
         $otherNumerator = $number->getNumerator();
         $otherDenominator = $number->getDenominator();
 
@@ -266,53 +250,18 @@ final readonly class RationalNumber implements ArithmeticOperations, Comparable,
 
     /**
      * Divide the current rational number by another RationalNumber object.
-     * @param ArithmeticOperations $number The RationalNumber object to divide by.
+     * @param RationalNumber $number The RationalNumber object to divide by.
      * @return RationalNumber The result of the division as a new RationalNumber object.
      * @throws DivisionByZeroException if dividing by zero.
      */
-    public function divideBy(ArithmeticOperations $number): RationalNumber
+    public function divideBy(RationalNumber $number): RationalNumber
     {
-        if (!$number instanceof RationalNumber) {
-            throw new InvalidArgumentException("Must be a RationalNumber instance.");
-        }
         if ($number->isZero()) {
             throw new DivisionByZeroException("Cannot divide by zero.");
         }
         // To divide by a number, we multiply by its reciprocal.
         $reciprocal = $number->reciprocal();
         return $this->multiply($reciprocal);
-    }
-
-    /**
-     * Divide another RationalNumber object by the current rational number (inverse division).
-     *
-     * This method performs the operation: $number / $this
-     * Equivalent to: $number->divideBy($this)
-     *
-     * Useful for method chaining where you want to divide a value by the result of a calculation.
-     *
-     * Example:
-     * <code>
-     * // Divide 100 by the result of a calculation
-     * $divisor = $a->add($b)->multiply($c);
-     * $result = $divisor->divideFrom(RationalNumber::fromFloat(100));
-     * // Instead of: RationalNumber::fromFloat(100)->divideBy($divisor)
-     * </code>
-     *
-     * @deprecated since 2.11, removed in 3.0: use $number->divideBy($this). See UPGRADE-3.0.md.
-     * @param ArithmeticOperations $number The dividend (the number to be divided).
-     * @return RationalNumber The result of $number / $this as a new RationalNumber object.
-     * @throws DivisionByZeroException if the current instance is zero (division by zero).
-     */
-    public function divideFrom(ArithmeticOperations $number): RationalNumber
-    {
-        Deprecation::trigger('RationalNumber::divideFrom()', 'Use $number->divideBy($this) instead.');
-
-        if (!$number instanceof RationalNumber) {
-            throw new InvalidArgumentException("Must be a RationalNumber instance.");
-        }
-
-        return $number->divideBy($this);
     }
 
     /**
@@ -426,30 +375,22 @@ final readonly class RationalNumber implements ArithmeticOperations, Comparable,
 
     /**
      * Check if this rational number equals another.
-     * @param Comparable $other The rational number to compare with.
+     * @param RationalNumber $other The rational number to compare with.
      * @return bool True if equal, false otherwise.
      */
-    public function equals(Comparable $other): bool
+    public function equals(RationalNumber $other): bool
     {
-        if (!$other instanceof RationalNumber) {
-            return false;
-        }
-
         // Both fractions are always in their simplest form, so equal values have equal parts.
         return $this->numerator === $other->numerator && $this->denominator === $other->denominator;
     }
 
     /**
      * Compare this rational number to another.
-     * @param Comparable $other The rational number to compare with.
+     * @param RationalNumber $other The rational number to compare with.
      * @return int Returns -1 if this < other, 0 if equal, 1 if this > other.
      */
-    public function compareTo(Comparable $other): int
+    public function compareTo(RationalNumber $other): int
     {
-        if (!$other instanceof RationalNumber) {
-            throw new InvalidArgumentException("Can only compare with another RationalNumber.");
-        }
-
         $a = $this->numerator;
         $b = $this->denominator;
         $c = $other->numerator;
@@ -516,40 +457,40 @@ final readonly class RationalNumber implements ArithmeticOperations, Comparable,
 
     /**
      * Check if this rational number is greater than another.
-     * @param Comparable $other The rational number to compare with.
+     * @param RationalNumber $other The rational number to compare with.
      * @return bool True if this > other.
      */
-    public function isGreaterThan(Comparable $other): bool
+    public function isGreaterThan(RationalNumber $other): bool
     {
         return $this->compareTo($other) > 0;
     }
 
     /**
      * Check if this rational number is less than another.
-     * @param Comparable $other The rational number to compare with.
+     * @param RationalNumber $other The rational number to compare with.
      * @return bool True if this < other.
      */
-    public function isLessThan(Comparable $other): bool
+    public function isLessThan(RationalNumber $other): bool
     {
         return $this->compareTo($other) < 0;
     }
 
     /**
      * Check if this rational number is greater than or equal to another.
-     * @param Comparable $other The rational number to compare with.
+     * @param RationalNumber $other The rational number to compare with.
      * @return bool True if this >= other.
      */
-    public function isGreaterThanOrEqual(Comparable $other): bool
+    public function isGreaterThanOrEqual(RationalNumber $other): bool
     {
         return $this->compareTo($other) >= 0;
     }
 
     /**
      * Check if this rational number is less than or equal to another.
-     * @param Comparable $other The rational number to compare with.
+     * @param RationalNumber $other The rational number to compare with.
      * @return bool True if this <= other.
      */
-    public function isLessThanOrEqual(Comparable $other): bool
+    public function isLessThanOrEqual(RationalNumber $other): bool
     {
         return $this->compareTo($other) <= 0;
     }
@@ -719,20 +660,6 @@ final readonly class RationalNumber implements ArithmeticOperations, Comparable,
     {
         $integerPart = (int) ceil($this->getFloat());
         return new self($integerPart, 1);
-    }
-
-    /**
-     * Reduce the rational number to its simplest form.
-     *
-     * @deprecated since 2.11, removed in 3.0: every RationalNumber is already in its simplest form,
-     *             remove the call. See UPGRADE-3.0.md.
-     * @return RationalNumber The same (already reduced) rational number.
-     */
-    public function reduce(): RationalNumber
-    {
-        Deprecation::trigger('RationalNumber::reduce()', 'Numbers are always in their simplest form: remove the call.');
-
-        return $this;
     }
 
     /**
