@@ -8,9 +8,21 @@ use RationalNumber\RationalNumber;
 
 /**
  * Factory for creating RationalNumber instances.
+ *
+ * @deprecated since 2.11, removed in 3.0: use the static constructors of RationalNumber
+ *             (new RationalNumber(), RationalNumber::fromString(), fromFloat(), ...). See UPGRADE-3.0.md.
  */
 class RationalNumberFactory implements RationalNumberFactoryInterface
 {
+    public function __construct()
+    {
+        trigger_error(
+            'RationalNumberFactory is deprecated since 2.11 and will be removed in 3.0. '
+            . 'Use the static constructors of RationalNumber instead. See UPGRADE-3.0.md.',
+            E_USER_DEPRECATED
+        );
+    }
+
     /**
      * Create a RationalNumber from numerator and denominator.
      * @param int $numerator The numerator.

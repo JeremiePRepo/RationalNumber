@@ -135,15 +135,16 @@ echo $unitsNeeded->toString();  // "9/1" (need 9 units for 100 items)
 
 ## Overflow Protection
 
-The library automatically detects integer overflow in arithmetic operations and throws an `ArithmeticError` with helpful guidance:
+The library automatically detects integer overflow in arithmetic operations and throws an `IntegerOverflowException` with helpful guidance:
 
 ```php
+use RationalNumber\Exception\RationalNumberException;
 use RationalNumber\RationalNumber;
 
 try {
     $largeNum = new RationalNumber(PHP_INT_MAX, 2);
     $result = $largeNum->multiply($largeNum);  // Would cause overflow
-} catch (\ArithmeticError $e) {
+} catch (RationalNumberException $e) {
     echo $e->getMessage();
     // "Operation would cause integer overflow during numerator multiplication.
     //  Consider using the GMP extension for arbitrary precision arithmetic."
@@ -155,7 +156,19 @@ try {
 - `pow()` can also trigger overflow, especially with large exponents
 - `sqrt()` may produce very large numerators/denominators that can overflow
 - Large intermediate values can overflow even if the final result would fit in memory
-- Throws `ArithmeticError` before the overflow occurs
+- Throws `RationalNumber\Exception\IntegerOverflowException` before the overflow occurs
+- In 2.x it extends `\ArithmeticError` (in 3.0 it will extend `\OverflowException`): catch
+  `IntegerOverflowException` or `RationalNumberException` to work with both versions
+
+**Exception hierarchy (since 2.11):** every exception thrown by the library implements
+`RationalNumber\Exception\RationalNumberException`, and keeps the type thrown before 2.11:
+
+| Exception | Extends | Thrown for |
+|-----------|---------|------------|
+| `InvalidArgumentException` | `\InvalidArgumentException` | invalid input (format, zero denominator, INF/NAN, array, JSON) |
+| `DivisionByZeroException` | `InvalidArgumentException` | `divideBy()` zero, `reciprocal()` of zero |
+| `EmptyCollectionException` | `InvalidArgumentException` | `average()`, `min()`, `max()` of an empty collection |
+| `IntegerOverflowException` | `\ArithmeticError` | any value that does not fit in a 64-bit integer |
 - Error messages suggest installing/using GMP extension for larger numbers
 - Detection happens during cross-multiplication in addition/subtraction
 
@@ -176,18 +189,15 @@ Note: The library currently detects overflow but doesn't automatically use GMP. 
 
 ## Additional Operations
 
-### Reduce to Simplest Form
+### Simplest Form
+
+Every number is reduced to its simplest form when it is created:
 
 ```php
 use RationalNumber\RationalNumber;
 
-// Reduce to simplest form (already done automatically in constructor)
 $number = new RationalNumber(6, 8);
 echo $number->toString();  // "3/4" (automatically normalized)
-
-// Manual reduction (returns new instance)
-$reduced = $number->reduce();
-echo $reduced->toString();  // "3/4"
 
 // Negative denominators are normalized
 $number = new RationalNumber(3, -4);

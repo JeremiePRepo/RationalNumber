@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace RationalNumber\Tests;
 
+use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use PHPUnit\Framework\TestCase;
 use RationalNumber\RationalNumber;
 use RationalNumber\Collection\RationalCollection;
@@ -299,8 +300,10 @@ class CollectionTest extends TestCase
         $this->assertEqualsWithDelta(20.0, $collection[1]->getFloat(), 1e-12);
     }
 
+    #[IgnoreDeprecations]
     public function testOffsetSet(): void
     {
+        $this->expectUserDeprecationMessageMatches('/\$collection\[\] = .* is deprecated since 2\.11.*->add\(\$number\)/');
         $collection = new RationalCollection();
         $collection[] = RationalNumber::fromFloat(5);
         $collection[1] = RationalNumber::fromFloat(10);
@@ -310,6 +313,7 @@ class CollectionTest extends TestCase
         $this->assertEqualsWithDelta(10.0, $collection[1]->getFloat(), 1e-12);
     }
 
+    #[IgnoreDeprecations]
     public function testOffsetSetInvalidType(): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -319,8 +323,10 @@ class CollectionTest extends TestCase
         $collection[] = "not a rational number";
     }
 
+    #[IgnoreDeprecations]
     public function testOffsetUnset(): void
     {
+        $this->expectUserDeprecationMessageMatches('/unset\(\$collection\[\$i\]\) is deprecated since 2\.11.*filter\(\)/');
         $collection = new RationalCollection([
             RationalNumber::fromFloat(1),
             RationalNumber::fromFloat(2),
@@ -336,6 +342,7 @@ class CollectionTest extends TestCase
         $this->assertSame([0, 1], array_keys($collection->toArray()));
     }
 
+    #[IgnoreDeprecations]
     public function testMinAndMaxAfterUnsettingTheFirstElement(): void
     {
         $collection = new RationalCollection([
@@ -350,6 +357,7 @@ class CollectionTest extends TestCase
         $this->assertSame('5/1', $collection->max()->toString());
     }
 
+    #[IgnoreDeprecations]
     public function testOffsetSetReplacesAnExistingElement(): void
     {
         $collection = new RationalCollection([RationalNumber::fromFloat(1), RationalNumber::fromFloat(2)]);
@@ -360,6 +368,7 @@ class CollectionTest extends TestCase
         $this->assertSame('7/1', $collection[0]->toString());
     }
 
+    #[IgnoreDeprecations]
     public function testOffsetSetRejectsStringKeys(): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -369,6 +378,7 @@ class CollectionTest extends TestCase
         $collection['price'] = RationalNumber::fromFloat(5);
     }
 
+    #[IgnoreDeprecations]
     public function testOffsetSetRejectsIndexesThatWouldLeaveAGap(): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -378,6 +388,7 @@ class CollectionTest extends TestCase
         $collection[5] = RationalNumber::fromFloat(5);
     }
 
+    #[IgnoreDeprecations]
     public function testOffsetSetRejectsNegativeIndexes(): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -403,8 +414,10 @@ class CollectionTest extends TestCase
         $this->assertInstanceOf(RationalNumber::class, $array[0]);
     }
 
+    #[IgnoreDeprecations]
     public function testClearMethod(): void
     {
+        $this->expectUserDeprecationMessageMatches('/clear\(\) is deprecated since 2\.11.*new RationalCollection\(\)/');
         $collection = new RationalCollection([
             RationalNumber::fromFloat(1),
             RationalNumber::fromFloat(2)

@@ -6,6 +6,8 @@ namespace RationalNumber\Contract;
 
 /**
  * Interface for comparable objects.
+ *
+ * @deprecated since 2.11, removed in 3.0: type against RationalNumber instead. See UPGRADE-3.0.md.
  */
 interface Comparable
 {

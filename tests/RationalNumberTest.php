@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace RationalNumber\Tests;
 
+use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use PHPUnit\Framework\TestCase;
 use RationalNumber\RationalNumber;
 
@@ -53,8 +54,10 @@ class RationalNumberTest extends TestCase
         $this->assertEqualsWithDelta(1.5, $result->getFloat(), 1e-12);
     }
 
+    #[IgnoreDeprecations]
     public function testDivisionFrom(): void
     {
+        $this->expectUserDeprecationMessageMatches('/divideFrom\(\) is deprecated since 2\.11.*divideBy/');
         $number1 = new RationalNumber(3, 4);
         $number2 = new RationalNumber(1, 2);
         $result = $number1->divideFrom($number2);
@@ -315,6 +318,7 @@ class RationalNumberTest extends TestCase
         $number->divideBy($zero);
     }
 
+    #[IgnoreDeprecations]
     public function testDivideFromZeroThrowsException(): void
     {
         $this->expectException(\InvalidArgumentException::class);
@@ -354,10 +358,12 @@ class RationalNumberTest extends TestCase
         $this->assertFalse($notInteger->isInteger());
     }
 
+    #[IgnoreDeprecations]
     public function testReduce(): void
     {
         $number = new RationalNumber(6, 8);
-        // Note: already normalized in constructor, but reduce() returns new instance
+        $this->expectUserDeprecationMessageMatches('/reduce\(\) is deprecated since 2\.11.*remove the call/');
+        // Already normalized in the constructor: reduce() returns the same value.
         $this->assertEquals("3/4", $number->toString());
         $reduced = $number->reduce();
         $this->assertEquals("3/4", $reduced->toString());

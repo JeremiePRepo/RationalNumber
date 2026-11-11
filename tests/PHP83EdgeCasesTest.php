@@ -6,7 +6,6 @@ namespace RationalNumber\Tests;
 
 use PHPUnit\Framework\TestCase;
 use RationalNumber\RationalNumber;
-use RationalNumber\Factory\RationalNumberFactory;
 use InvalidArgumentException;
 
 /**
@@ -15,13 +14,6 @@ use InvalidArgumentException;
  */
 class PHP83EdgeCasesTest extends TestCase
 {
-    private RationalNumberFactory $factory;
-
-    protected function setUp(): void
-    {
-        $this->factory = new RationalNumberFactory();
-    }
-
     /**
      * Test with very large numbers close to PHP_INT_MAX
      */
@@ -83,7 +75,7 @@ class PHP83EdgeCasesTest extends TestCase
     {
         // Test with a float that has many decimal places
         $preciseFloat = 0.123456789012345;
-        $number = $this->factory->fromFloat($preciseFloat);
+        $number = RationalNumber::fromFloat($preciseFloat);
 
         // Verify that the conversion is reasonably accurate
         $this->assertEqualsWithDelta($preciseFloat, $number->getFloat(), 1e-10);
@@ -97,7 +89,7 @@ class PHP83EdgeCasesTest extends TestCase
     public function testVerySmallFloatValues(): void
     {
         $verySmall = 0.001; // Use a more reasonable value
-        $number = $this->factory->fromFloat($verySmall);
+        $number = RationalNumber::fromFloat($verySmall);
 
         $this->assertEqualsWithDelta($verySmall, $number->getFloat(), 1e-10);
         $this->assertFalse($number->isZero());
@@ -110,7 +102,7 @@ class PHP83EdgeCasesTest extends TestCase
     public function testVeryLargeFloatValues(): void
     {
         $veryLarge = 1000000.5;
-        $number = $this->factory->fromFloat($veryLarge);
+        $number = RationalNumber::fromFloat($veryLarge);
 
         $this->assertEqualsWithDelta($veryLarge, $number->getFloat(), 1e-6);
         $this->assertFalse($number->isInteger());
@@ -184,7 +176,7 @@ class PHP83EdgeCasesTest extends TestCase
      */
     public function testZeroOperations(): void
     {
-        $zero = $this->factory->zero();
+        $zero = RationalNumber::zero();
         $number = new RationalNumber(5, 1);
 
         $this->assertEquals("5/1", $number->add($zero)->toString());
@@ -201,7 +193,7 @@ class PHP83EdgeCasesTest extends TestCase
      */
     public function testOneOperations(): void
     {
-        $one = $this->factory->one();
+        $one = RationalNumber::one();
         $number = new RationalNumber(7, 3);
 
         $this->assertEquals("7/3", $number->multiply($one)->toString());
@@ -342,22 +334,22 @@ class PHP83EdgeCasesTest extends TestCase
     }
 
     /**
-     * Test factory fromFloat with zero
+     * Test fromFloat with zero
      */
-    public function testFactoryFromFloatZero(): void
+    public function testFromFloatZeroValue(): void
     {
-        $zero = $this->factory->fromFloat(0.0);
+        $zero = RationalNumber::fromFloat(0.0);
 
         $this->assertTrue($zero->isZero());
         $this->assertEquals("0/1", $zero->toString());
     }
 
     /**
-     * Test factory fromFloat with negative float
+     * Test fromFloat with negative float
      */
-    public function testFactoryFromFloatNegative(): void
+    public function testFromFloatNegativeValue(): void
     {
-        $negative = $this->factory->fromFloat(-2.5);
+        $negative = RationalNumber::fromFloat(-2.5);
 
         $this->assertEquals(-2.5, $negative->getFloat());
         $this->assertEquals("-5/2", $negative->toString());

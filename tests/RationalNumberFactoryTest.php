@@ -4,17 +4,26 @@ declare(strict_types=1);
 
 namespace RationalNumber\Tests;
 
+use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use PHPUnit\Framework\TestCase;
 use RationalNumber\Factory\RationalNumberFactory;
 use RationalNumber\RationalNumber;
 
+#[IgnoreDeprecations]
 class RationalNumberFactoryTest extends TestCase
 {
-    private $factory;
+    private RationalNumberFactory $factory;
 
     protected function setUp(): void
     {
         $this->factory = new RationalNumberFactory();
+    }
+
+    public function testConstructorIsDeprecated(): void
+    {
+        $this->expectUserDeprecationMessageMatches('/RationalNumberFactory is deprecated since 2\.11.*static constructors/');
+
+        new RationalNumberFactory();
     }
 
     public function testCreate(): void

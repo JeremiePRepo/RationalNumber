@@ -8,6 +8,8 @@ use RationalNumber\RationalNumber;
 
 /**
  * Interface for creating RationalNumber instances.
+ *
+ * @deprecated since 2.11, removed in 3.0: use the static constructors of RationalNumber. See UPGRADE-3.0.md.
  */
 interface RationalNumberFactoryInterface
 {

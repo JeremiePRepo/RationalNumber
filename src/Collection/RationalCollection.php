@@ -52,6 +52,10 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
     /**
      * Add a RationalNumber to the collection.
      *
+     * In 3.0 collections become immutable and add() returns a new collection. Write
+     * `$collection = $collection->add($number);`, which already works in 2.x, to be ready.
+     * See UPGRADE-3.0.md.
+     *
      * @param RationalNumber $number The RationalNumber to add.
      * @return self Returns $this for method chaining.
      */
@@ -203,10 +207,13 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
     /**
      * Clear all elements from the collection.
      *
+     * @deprecated since 2.11, removed in 3.0 (collections become immutable): use new RationalCollection().
+     *             See UPGRADE-3.0.md.
      * @return self Returns $this for method chaining.
      */
     public function clear(): self
     {
+        self::deprecated('clear()', 'new RationalCollection()');
         $this->numbers = [];
         return $this;
     }
@@ -275,12 +282,17 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
      * The collection stays a list indexed from 0 to count() - 1: the offset must be null (append),
      * an existing index (replace) or count() (append).
      *
+     * @deprecated since 2.11, removed in 3.0 (collections become immutable): use
+     *             $collection = $collection->add($number) or build a new RationalCollection([...]).
+     *             See UPGRADE-3.0.md.
      * @param mixed $offset The offset to set (null appends to end).
      * @param mixed $value The RationalNumber to set.
      * @throws InvalidArgumentException if value is not a RationalNumber or the offset is not a valid index.
      */
     public function offsetSet(mixed $offset, mixed $value): void
     {
+        self::deprecated('$collection[] = / $collection[$i] =', '$collection = $collection->add($number)');
+
         if (!$value instanceof RationalNumber) {
             throw new InvalidArgumentException("Value must be a RationalNumber instance.");
         }
@@ -302,15 +314,31 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
      * Unset a value at an offset. The following elements are shifted down so that indexes stay
      * contiguous (after unset($collection[1]), the former element 2 is at index 1).
      *
+     * @deprecated since 2.11, removed in 3.0 (collections become immutable): use filter().
+     *             See UPGRADE-3.0.md.
      * @param mixed $offset The offset to unset.
      */
     public function offsetUnset(mixed $offset): void
     {
+        self::deprecated('unset($collection[$i])', 'filter()');
+
         if (!is_int($offset) && !is_string($offset)) {
             return;
         }
 
         unset($this->numbers[$offset]);
         $this->numbers = array_values($this->numbers);
+    }
+
+    /**
+     * Report the use of a mutating API that 3.0 removes.
+     */
+    private static function deprecated(string $usage, string $replacement): void
+    {
+        trigger_error(
+            "RationalCollection: {$usage} is deprecated since 2.11 and will be removed in 3.0 "
+            . "(collections become immutable). Use {$replacement} instead. See UPGRADE-3.0.md.",
+            E_USER_DEPRECATED
+        );
     }
 }

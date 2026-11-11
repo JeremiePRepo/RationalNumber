@@ -102,11 +102,21 @@ echo $expensive->count();  // 2
 use RationalNumber\RationalNumber;
 use RationalNumber\Collection\RationalCollection;
 
-$collection = new RationalCollection();
-$collection[] = RationalNumber::fromFloat(1);
-$collection[] = RationalNumber::fromFloat(2);
+$collection = new RationalCollection([
+    RationalNumber::fromFloat(1),
+    RationalNumber::fromFloat(2),
+]);
 echo $collection[0]->getFloat();  // 1.0
+echo isset($collection[5]) ? 'yes' : 'no';  // "no"
 ```
+
+Collections are lists indexed from 0 to `count() - 1`. Reading by index (`$collection[0]`,
+`isset()`) is the supported way to use array access.
+
+> **Deprecated since 2.11:** writing through array access (`$collection[] = $n`,
+> `$collection[0] = $n`, `unset($collection[0])`) and `clear()` trigger an `E_USER_DEPRECATED`
+> warning. In 3.0 collections become immutable: use `$collection = $collection->add($n)`,
+> `filter()` or `new RationalCollection([...])` instead. See [UPGRADE-3.0.md](../UPGRADE-3.0.md).
 
 ### Iteration
 

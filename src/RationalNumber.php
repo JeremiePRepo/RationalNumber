@@ -252,12 +252,19 @@ final readonly class RationalNumber implements ArithmeticOperations, Comparable,
      * // Instead of: RationalNumber::fromFloat(100)->divideBy($divisor)
      * </code>
      *
+     * @deprecated since 2.11, removed in 3.0: use $number->divideBy($this). See UPGRADE-3.0.md.
      * @param ArithmeticOperations $number The dividend (the number to be divided).
      * @return RationalNumber The result of $number / $this as a new RationalNumber object.
      * @throws DivisionByZeroException if the current instance is zero (division by zero).
      */
     public function divideFrom(ArithmeticOperations $number): RationalNumber
     {
+        trigger_error(
+            'RationalNumber::divideFrom() is deprecated since 2.11 and will be removed in 3.0. '
+            . 'Use $number->divideBy($this) instead. See UPGRADE-3.0.md.',
+            E_USER_DEPRECATED
+        );
+
         if (!$number instanceof RationalNumber) {
             throw new InvalidArgumentException("Must be a RationalNumber instance.");
         }
@@ -626,14 +633,20 @@ final readonly class RationalNumber implements ArithmeticOperations, Comparable,
 
     /**
      * Reduce the rational number to its simplest form.
-     * @return RationalNumber The reduced rational number as a new RationalNumber object.
+     *
+     * @deprecated since 2.11, removed in 3.0: every RationalNumber is already in its simplest form,
+     *             remove the call. See UPGRADE-3.0.md.
+     * @return RationalNumber The same (already reduced) rational number.
      */
     public function reduce(): RationalNumber
     {
-        $gcd = self::gcd($this->numerator, $this->denominator);
-        $newNumerator = $this->numerator / $gcd;
-        $newDenominator = $this->denominator / $gcd;
-        return new RationalNumber((int)$newNumerator, (int)$newDenominator);
+        trigger_error(
+            'RationalNumber::reduce() is deprecated since 2.11 and will be removed in 3.0. '
+            . 'Numbers are always in their simplest form: remove the call. See UPGRADE-3.0.md.',
+            E_USER_DEPRECATED
+        );
+
+        return $this;
     }
 
     /**

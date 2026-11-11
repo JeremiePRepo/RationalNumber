@@ -6,6 +6,8 @@ namespace RationalNumber\Contract;
 
 /**
  * Interface for arithmetic operations on rational numbers.
+ *
+ * @deprecated since 2.11, removed in 3.0: type against RationalNumber instead. See UPGRADE-3.0.md.
  */
 interface ArithmeticOperations
 {
