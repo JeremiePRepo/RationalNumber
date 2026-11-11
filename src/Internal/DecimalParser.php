@@ -190,7 +190,7 @@ final class DecimalParser
         $dropped = max(-$exponent, strlen($digits)) - self::MAX_POWER_OF_TEN;
         $rounded = (int) substr($digits, 0, -$dropped) + (($digits[-$dropped] ?? '0') >= '5' ? 1 : 0);
         if ($rounded === 0) {
-            throw new IntegerOverflowException(
+            throw IntegerOverflowException::create(
                 "Integer overflow: the value is too small to be represented without becoming zero."
             );
         }

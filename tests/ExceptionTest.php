@@ -82,6 +82,21 @@ class ExceptionTest extends TestCase
             IntegerOverflowException::class,
             \ArithmeticError::class,
         ];
+        yield 'fraction numerator too large' => [
+            fn () => RationalNumber::fromString('9223372036854775808/1'),
+            IntegerOverflowException::class,
+            \ArithmeticError::class,
+        ];
+        yield 'fraction denominator too large' => [
+            fn () => RationalNumber::fromString('1/9223372036854775808'),
+            IntegerOverflowException::class,
+            \ArithmeticError::class,
+        ];
+        yield 'PHP_INT_MIN' => [
+            fn () => new RationalNumber(PHP_INT_MIN),
+            IntegerOverflowException::class,
+            \ArithmeticError::class,
+        ];
     }
 
     /**
@@ -98,6 +113,9 @@ class ExceptionTest extends TestCase
             $this->assertInstanceOf($expectedClass, $e);
             $this->assertInstanceOf(RationalNumberException::class, $e);
             $this->assertInstanceOf($legacyClass, $e);
+            if ($e instanceof IntegerOverflowException) {
+                $this->assertStringContainsString('GMP extension', $e->getMessage());
+            }
 
             return;
         }

@@ -103,13 +103,13 @@ final readonly class RationalNumber implements ArithmeticOperations, Comparable,
 
             // Validate for integer overflow before converting to int (exact check on the digits)
             if (!DecimalParser::fitsInInt(ltrim($numeratorStr, '+-0'))) {
-                throw new IntegerOverflowException(
+                throw IntegerOverflowException::create(
                     "Integer overflow in fraction string '{$input}'. Numerator exceeds PHP_INT_MAX."
                 );
             }
 
             if (!DecimalParser::fitsInInt(ltrim($denominatorStr, '+-0'))) {
-                throw new IntegerOverflowException(
+                throw IntegerOverflowException::create(
                     "Integer overflow in fraction string '{$input}'. Denominator exceeds PHP_INT_MAX."
                 );
             }
