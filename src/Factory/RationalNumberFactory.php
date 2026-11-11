@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace RationalNumber\Factory;
 
+use RationalNumber\Internal\Deprecation;
 use RationalNumber\RationalNumber;
 
 /**
@@ -16,11 +17,7 @@ class RationalNumberFactory implements RationalNumberFactoryInterface
 {
     public function __construct()
     {
-        trigger_error(
-            'RationalNumberFactory is deprecated since 2.11 and will be removed in 3.0. '
-            . 'Use the static constructors of RationalNumber instead. See UPGRADE-3.0.md.',
-            E_USER_DEPRECATED
-        );
+        Deprecation::trigger('RationalNumberFactory', 'Use the static constructors of RationalNumber instead.');
     }
 
     /**

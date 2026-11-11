@@ -6,6 +6,7 @@ namespace RationalNumber\Collection;
 
 use RationalNumber\Exception\EmptyCollectionException;
 use RationalNumber\Exception\InvalidArgumentException;
+use RationalNumber\Internal\Deprecation;
 use RationalNumber\RationalNumber;
 
 /**
@@ -341,10 +342,6 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
      */
     private static function deprecated(string $usage, string $replacement): void
     {
-        trigger_error(
-            "RationalCollection: {$usage} is deprecated since 2.11 and will be removed in 3.0 "
-            . "(collections become immutable). Use {$replacement} instead. See UPGRADE-3.0.md.",
-            E_USER_DEPRECATED
-        );
+        Deprecation::trigger("RationalCollection: {$usage}", "Collections become immutable: use {$replacement} instead.");
     }
 }

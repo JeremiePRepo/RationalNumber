@@ -11,6 +11,7 @@ use RationalNumber\Exception\DivisionByZeroException;
 use RationalNumber\Exception\IntegerOverflowException;
 use RationalNumber\Exception\InvalidArgumentException;
 use RationalNumber\Internal\DecimalParser;
+use RationalNumber\Internal\Deprecation;
 
 /**
  * Represents an immutable rational number (fraction) with precise arithmetic operations.
@@ -43,7 +44,15 @@ final readonly class RationalNumber implements ArithmeticOperations, Comparable,
             );
         }
 
-        [$this->numerator, $this->denominator] = self::normalize($numerator, $denominator);
+        // Normalize: positive denominator, reduced by the GCD. Each readonly property is assigned once.
+        if ($denominator < 0) {
+            $numerator = -$numerator;
+            $denominator = -$denominator;
+        }
+
+        $gcd = self::gcd($numerator, $denominator);
+        $this->numerator = $gcd === 1 ? $numerator : intdiv($numerator, $gcd);
+        $this->denominator = $gcd === 1 ? $denominator : intdiv($denominator, $gcd);
     }
 
     /**
@@ -180,8 +189,8 @@ final readonly class RationalNumber implements ArithmeticOperations, Comparable,
         }
 
         // Check for potential overflow before multiplication
-        $this->checkMultiplicationOverflow($this->numerator, $number->getNumerator(), 'numerator multiplication');
-        $this->checkMultiplicationOverflow($this->denominator, $number->getDenominator(), 'denominator multiplication');
+        self::checkMultiplicationOverflow($this->numerator, $number->getNumerator(), 'numerator multiplication');
+        self::checkMultiplicationOverflow($this->denominator, $number->getDenominator(), 'denominator multiplication');
 
         $newNumerator = $this->numerator * $number->getNumerator();
         $newDenominator = $this->denominator * $number->getDenominator();
@@ -204,13 +213,13 @@ final readonly class RationalNumber implements ArithmeticOperations, Comparable,
         $otherDenominator = $number->getDenominator();
 
         // Check for potential overflow in cross-multiplication
-        $this->checkMultiplicationOverflow($this->numerator, $otherDenominator, 'addition cross-multiplication');
-        $this->checkMultiplicationOverflow($otherNumerator, $this->denominator, 'addition cross-multiplication');
-        $this->checkMultiplicationOverflow($this->denominator, $otherDenominator, 'denominator multiplication');
+        self::checkMultiplicationOverflow($this->numerator, $otherDenominator, 'addition cross-multiplication');
+        self::checkMultiplicationOverflow($otherNumerator, $this->denominator, 'addition cross-multiplication');
+        self::checkMultiplicationOverflow($this->denominator, $otherDenominator, 'denominator multiplication');
 
         $left = $this->numerator * $otherDenominator;
         $right = $otherNumerator * $this->denominator;
-        if ($right > 0 ? $left > PHP_INT_MAX - $right : $left < PHP_INT_MIN - $right) {
+        if ($right > 0 ? $left > PHP_INT_MAX - $right : $left < -PHP_INT_MAX - $right) {
             throw IntegerOverflowException::create("Operation would cause integer overflow during addition.");
         }
 
@@ -235,13 +244,13 @@ final readonly class RationalNumber implements ArithmeticOperations, Comparable,
         $otherDenominator = $number->getDenominator();
 
         // Check for potential overflow in cross-multiplication
-        $this->checkMultiplicationOverflow($this->numerator, $otherDenominator, 'subtraction cross-multiplication');
-        $this->checkMultiplicationOverflow($otherNumerator, $this->denominator, 'subtraction cross-multiplication');
-        $this->checkMultiplicationOverflow($this->denominator, $otherDenominator, 'denominator multiplication');
+        self::checkMultiplicationOverflow($this->numerator, $otherDenominator, 'subtraction cross-multiplication');
+        self::checkMultiplicationOverflow($otherNumerator, $this->denominator, 'subtraction cross-multiplication');
+        self::checkMultiplicationOverflow($this->denominator, $otherDenominator, 'denominator multiplication');
 
         $left = $this->numerator * $otherDenominator;
         $right = $otherNumerator * $this->denominator;
-        if ($right > 0 ? $left < PHP_INT_MIN + $right : $left > PHP_INT_MAX + $right) {
+        if ($right > 0 ? $left < -PHP_INT_MAX + $right : $left > PHP_INT_MAX + $right) {
             throw IntegerOverflowException::create("Operation would cause integer overflow during subtraction.");
         }
 
@@ -292,21 +301,13 @@ final readonly class RationalNumber implements ArithmeticOperations, Comparable,
      */
     public function divideFrom(ArithmeticOperations $number): RationalNumber
     {
-        trigger_error(
-            'RationalNumber::divideFrom() is deprecated since 2.11 and will be removed in 3.0. '
-            . 'Use $number->divideBy($this) instead. See UPGRADE-3.0.md.',
-            E_USER_DEPRECATED
-        );
+        Deprecation::trigger('RationalNumber::divideFrom()', 'Use $number->divideBy($this) instead.');
 
         if (!$number instanceof RationalNumber) {
             throw new InvalidArgumentException("Must be a RationalNumber instance.");
         }
-        if ($this->isZero()) {
-            throw new DivisionByZeroException("Cannot divide by zero.");
-        }
-        // To divide a number by this rational number, we multiply it by this number's reciprocal.
-        $reciprocal = $this->reciprocal();
-        return $number->multiply($reciprocal);
+
+        return $number->divideBy($this);
     }
 
     /**
@@ -337,7 +338,7 @@ final readonly class RationalNumber implements ArithmeticOperations, Comparable,
         $value = self::fromString(rtrim(trim($percentage), '%'));
 
         // Divide by 100 directly rather than through multiply(): one allocation and one GCD fewer.
-        $value->checkMultiplicationOverflow($value->denominator, 100, 'denominator multiplication');
+        self::checkMultiplicationOverflow($value->denominator, 100, 'denominator multiplication');
         return new self($value->numerator, $value->denominator * 100);
     }
 
@@ -673,11 +674,7 @@ final readonly class RationalNumber implements ArithmeticOperations, Comparable,
      */
     public function reduce(): RationalNumber
     {
-        trigger_error(
-            'RationalNumber::reduce() is deprecated since 2.11 and will be removed in 3.0. '
-            . 'Numbers are always in their simplest form: remove the call. See UPGRADE-3.0.md.',
-            E_USER_DEPRECATED
-        );
+        Deprecation::trigger('RationalNumber::reduce()', 'Numbers are always in their simplest form: remove the call.');
 
         return $this;
     }
@@ -828,7 +825,7 @@ final readonly class RationalNumber implements ArithmeticOperations, Comparable,
      * @return void
      * @throws IntegerOverflowException if the multiplication would overflow.
      */
-    private function checkMultiplicationOverflow(int $a, int $b, string $operation): void
+    private static function checkMultiplicationOverflow(int $a, int $b, string $operation): void
     {
         // Zero is always safe
         if ($a === 0 || $b === 0) {
@@ -842,27 +839,5 @@ final readonly class RationalNumber implements ArithmeticOperations, Comparable,
                 sprintf("Operation would cause integer overflow during %s.", $operation)
             );
         }
-    }
-
-    /**
-     * Normalize a fraction to its simplest form: reduce it by the greatest common divisor (GCD)
-     * and make the denominator positive.
-     *
-     * @return array{int, int} [numerator, denominator]
-     */
-    private static function normalize(int $numerator, int $denominator): array
-    {
-        if ($denominator < 0) {
-            $numerator = -$numerator;
-            $denominator = -$denominator;
-        }
-
-        $gcd = self::gcd($numerator, $denominator);
-        if ($gcd !== 1) {
-            $numerator = intdiv($numerator, $gcd);
-            $denominator = intdiv($denominator, $gcd);
-        }
-
-        return [$numerator, $denominator];
     }
 }
