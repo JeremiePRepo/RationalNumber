@@ -3,7 +3,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.11.0] - Unreleased
+## [2.11.0] - 2026-11-11
 
 The last 2.x release before 3.0. It is backward compatible, and it deprecates (with an
 `E_USER_DEPRECATED` warning naming the replacement) everything 3.0 removes: code that runs without
