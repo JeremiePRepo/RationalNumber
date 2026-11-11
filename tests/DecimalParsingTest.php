@@ -36,7 +36,55 @@ class DecimalParsingTest extends TestCase
     }
 
     // ---------------------------------------------------------------
-    // fromString(): exact parsing
+    // fromFloat() and fromString(): same exact result for the same decimal
+    // ---------------------------------------------------------------
+
+    /**
+     * @dataProvider decimalProvider
+     */
+    public function testFromFloatIsExact(string $input, string $expected): void
+    {
+        $this->assertSame($expected, RationalNumber::fromFloat((float) $input)->toString());
+    }
+
+    /**
+     * @dataProvider decimalProvider
+     */
+    public function testFromStringIsExact(string $input, string $expected): void
+    {
+        $this->assertSame($expected, RationalNumber::fromString($input)->toString());
+    }
+
+    /**
+     * Decimals that are the shortest representation of a float, so both conversions must agree.
+     *
+     * @return array<string, array{string, string}>
+     */
+    public static function decimalProvider(): array
+    {
+        return [
+            // fromFloat() used to truncate $value * 10^n (0.29 * 100 = 28.999999999999996 gave 7/25).
+            '0.29'                      => ['0.29', '29/100'],
+            '0.57'                      => ['0.57', '57/100'],
+            '1.15'                      => ['1.15', '23/20'],
+            '4.35'                      => ['4.35', '87/20'],
+            '9.95'                      => ['9.95', '199/20'],
+            '-0.29'                     => ['-0.29', '-29/100'],
+            '-1.15'                     => ['-1.15', '-23/20'],
+            '0.001'                     => ['0.001', '1/1000'],
+            '1.005'                     => ['1.005', '201/200'],
+            // "1.15E+15": the mantissa 1.15 * 100 = 114.99999999999999 was truncated too.
+            'scientific notation'       => ['1.15e15', '1150000000000000/1'],
+            // (string) 99999999999999.5 is "1.0E+14" with precision=14: the .5 was lost.
+            'all significant digits'    => ['99999999999999.5', '199999999999999/2'],
+            // Both used to throw a false overflow error.
+            'large exponent that fits'  => ['1.2345e16', '12345000000000000/1'],
+            'many significant digits'   => ['123456789012345.67', '12345678901234567/100'],
+        ];
+    }
+
+    // ---------------------------------------------------------------
+    // fromString(): exact parsing of inputs a float cannot hold
     // ---------------------------------------------------------------
 
     /**
@@ -53,7 +101,6 @@ class DecimalParsingTest extends TestCase
     public static function exactDecimalStringProvider(): array
     {
         return [
-            'simple decimal'            => ['0.29', '29/100'],
             'leading dot'               => ['.5', '1/2'],
             'trailing dot'              => ['5.', '5/1'],
             'explicit plus sign'        => ['+2.5', '5/2'],
@@ -62,11 +109,10 @@ class DecimalParsingTest extends TestCase
             'many leading zeros'        => ['000000000000000000000.25', '1/4'],
             'negative exponent'         => ['1.5e-3', '3/2000'],
             'uppercase exponent'        => ['2.5E+2', '250/1'],
-            'large exponent that fits'  => ['1.2345e16', '12345000000000000/1'],
-            'many significant digits'   => ['123456789012345.67', '12345678901234567/100'],
             'beyond float precision'    => ['0.12345678901234567', '12345678901234567/100000000000000000'],
             'PHP_INT_MAX'               => ['9223372036854775807', '9223372036854775807/1'],
             'smallest exact decimal'    => ['1e-18', '1/1000000000000000000'],
+            'fraction with zeros'       => ['00000000000000000000001/2', '1/2'],
         ];
     }
 
@@ -91,12 +137,14 @@ class DecimalParsingTest extends TestCase
     public static function overflowingStringProvider(): array
     {
         return [
-            'huge exponent'             => ['1e400'],
+            'huge exponent'             => ['1e400'], // used to become INF, then silently 0/1
             'tiny exponent'             => ['1e-400'],
             'too many integer digits'   => ['99999999999999999999'],
             'PHP_INT_MAX + 1'           => ['9223372036854775808'],
             'too many decimal places'   => ['1e-19'],
             'absurd exponent'           => ['1e99999999999999999999'],
+            'fraction PHP_INT_MAX + 1'  => ['9223372036854775808/1'],
+            'fraction denominator'      => ['1/9223372036854775808'],
         ];
     }
 
@@ -154,27 +202,6 @@ class DecimalParsingTest extends TestCase
         ];
     }
 
-    public function testFromStringThrowsOnValueThatWouldOverflowAFloat(): void
-    {
-        // Used to become INF, then silently 0/1.
-        $this->expectException(\ArithmeticError::class);
-
-        RationalNumber::fromString('1e400');
-    }
-
-    public function testFromFloatKeepsAllSignificantDigits(): void
-    {
-        // (string) 99999999999999.5 is "1.0E+14" with precision=14: the .5 used to be lost.
-        $this->assertSame('199999999999999/2', RationalNumber::fromFloat(99999999999999.5)->toString());
-    }
-
-    public function testFromFloatWithLargeExponentThatFitsDoesNotThrow(): void
-    {
-        // Used to throw a false overflow error.
-        $this->assertSame('12345000000000000/1', RationalNumber::fromFloat(1.2345e16)->toString());
-        $this->assertSame('12345678901234567/100', RationalNumber::fromFloat(123456789012345.67)->toString());
-    }
-
     public function testFromFloatThrowsWhenValueIsTooLarge(): void
     {
         $this->expectException(\ArithmeticError::class);
@@ -192,29 +219,27 @@ class DecimalParsingTest extends TestCase
         RationalNumber::fromFloat(1.5e-20);
     }
 
-    public function testFromFloatRoundsSmallValuesThatDoNotFitExactly(): void
+    /**
+     * Values whose exact decimal does not fit are rounded (half up) to 18 decimal places.
+     *
+     * @dataProvider floatsToRoundProvider
+     */
+    public function testFromFloatRoundsValuesThatDoNotFitExactly(float $value, string $expected): void
     {
-        // 12345678901234568 / 10^21 does not fit: rounded to 18 decimal places,
-        // i.e. 12345678901235 / 10^18.
-        $value = 1.2345678901234568e-5;
-        $number = RationalNumber::fromFloat($value);
-
-        $this->assertSame('2469135780247/200000000000000000', $number->toString());
-        $this->assertEqualsWithDelta($value, $number->getFloat(), 1e-18);
+        $this->assertSame($expected, RationalNumber::fromFloat($value)->toString());
     }
 
-    public function testFromFloatRoundsUpToTheSmallestRepresentableValue(): void
+    /**
+     * @return array<string, array{float, string}>
+     */
+    public static function floatsToRoundProvider(): array
     {
-        // 6e-19 rounds to 1e-18 instead of becoming zero.
-        $this->assertSame('1/1000000000000000000', RationalNumber::fromFloat(6e-19)->toString());
-    }
-
-    public function testFromFloatPreservesSignWhenRounding(): void
-    {
-        $this->assertSame(
-            '-2469135780247/200000000000000000',
-            RationalNumber::fromFloat(-1.2345678901234568e-5)->toString()
-        );
+        return [
+            // 12345678901234568 / 10^21 => 12345678901235 / 10^18
+            'too many decimal places'   => [1.2345678901234568e-5, '2469135780247/200000000000000000'],
+            'negative'                  => [-1.2345678901234568e-5, '-2469135780247/200000000000000000'],
+            'rounds up instead of zero' => [6e-19, '1/1000000000000000000'],
+        ];
     }
 
     public function testFromFloatHandlesNegativeZero(): void
@@ -287,6 +312,7 @@ class DecimalParsingTest extends TestCase
     {
         return [
             'simple'                  => ['57%', '57/100'],
+            'used to truncate'        => ['29%', '29/100'],
             'without sign'            => ['57', '57/100'],
             'decimal with spaces'     => [' 12.5 % ', '1/8'],
             'negative'                => ['-20%', '-1/5'],

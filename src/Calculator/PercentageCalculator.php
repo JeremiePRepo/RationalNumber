@@ -69,8 +69,7 @@ class PercentageCalculator
             E_USER_DEPRECATED
         );
         
-        $increaseFraction = $number->multiply(RationalNumber::fromPercentage($percentage));
-        return $number->add($increaseFraction);
+        return $number->increaseByPercentage($percentage);
     }
 
     /**
@@ -88,8 +87,7 @@ class PercentageCalculator
             E_USER_DEPRECATED
         );
         
-        $decreaseFraction = $number->multiply(RationalNumber::fromPercentage($percentage));
-        return $number->subtract($decreaseFraction);
+        return $number->decreaseByPercentage($percentage);
     }
 
     /**

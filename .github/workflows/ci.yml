@@ -47,6 +47,10 @@ jobs:
       - name: Run test suite with non-default float precision
         # Conversions must not depend on the precision / serialize_precision ini settings.
         run: php -d precision=17 -d serialize_precision=17 vendor/bin/phpunit
+
+      - name: Run benchmarks (smoke test)
+        # Not a performance gate: only makes sure the benchmark suite still runs.
+        run: composer benchmark
       
       - name: Test summary
         if: always()

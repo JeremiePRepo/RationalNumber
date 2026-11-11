@@ -21,6 +21,8 @@ All notable changes to this project will be documented in this file.
     use the exact percentage parsing.
 - **False overflow error**: `fromFloat(1.2345e16)` and `fromFloat(123456789012345.67)` threw an
   `ArithmeticError` although the value fits in an integer.
+- **Fraction strings just above `PHP_INT_MAX`**: `fromString('9223372036854775808/1')` passed the
+  float-based overflow check and was silently clamped; the check is now exact on the digits.
 - **`composer benchmark` never ran**: the benchmark classes used the `RationalNumber\Benchmarks`
   namespace, which no autoload rule covered (now `RationalNumber\Tests\Benchmarks`, matching the
   existing PSR-4 mapping). The multiplication, division and mixed benchmarks accumulated their
@@ -37,9 +39,14 @@ All notable changes to this project will be documented in this file.
 - `fromFloat()` rounds values whose exact decimal does not fit in 64-bit integers to the largest
   number of significant digits that fits (at most 18 decimal places), instead of an arbitrary
   15-decimal cap. `fromString()` stays strict and throws in that case.
-- CI also runs the test suite with `precision=17` and `serialize_precision=17`.
+- CI also runs the test suite with `precision=17` and `serialize_precision=17`, and runs
+  `composer benchmark` as a smoke test.
 - Removed the private `fromScientificNotation()` helper (now handled by the decimal parser).
-- **Added 76 tests** (`DecimalParsingTest` and regression tests in `RationalNumberTest`)
+- Faster `fromFloat()` for integral floats (e.g. `100.0`, ~3× faster) and faster percentage
+  operations (~30%, no intermediate `multiply()`).
+- The deprecated `PercentageCalculator::increaseBy()` / `decreaseBy()` now delegate to
+  `increaseByPercentage()` / `decreaseByPercentage()`.
+- **Added 80 tests** (`DecimalParsingTest`)
 
 ## [2.9.0] - 2026-02-16
 

@@ -63,51 +63,6 @@ class RationalNumberTest extends TestCase
         $this->assertEqualsWithDelta(2.5, $number->getFloat(), 1e-12);
     }
 
-    /**
-     * Regression: fromFloat() used to truncate $value * 10^n, so values whose
-     * floating-point product lands just below the integer lost one unit
-     * (e.g. 0.29 * 100 = 28.999999999999996 gave 7/25 instead of 29/100).
-     *
-     * @dataProvider decimalsSensitiveToTruncationProvider
-     */
-    public function testFromFloatDoesNotTruncateDecimals(string $input, string $expected) {
-        $this->assertSame($expected, RationalNumber::fromFloat((float) $input)->toString());
-    }
-
-    /**
-     * @dataProvider decimalsSensitiveToTruncationProvider
-     */
-    public function testFromStringDoesNotTruncateDecimals(string $input, string $expected) {
-        $this->assertSame($expected, RationalNumber::fromString($input)->toString());
-    }
-
-    /**
-     * @return array<string, array{string, string}>
-     */
-    public static function decimalsSensitiveToTruncationProvider(): array {
-        return [
-            '0.29'  => ['0.29', '29/100'],
-            '0.57'  => ['0.57', '57/100'],
-            '1.15'  => ['1.15', '23/20'],
-            '4.35'  => ['4.35', '87/20'],
-            '9.95'  => ['9.95', '199/20'],
-            '-0.29' => ['-0.29', '-29/100'],
-            '-1.15' => ['-1.15', '-23/20'],
-            '0.001' => ['0.001', '1/1000'],
-            '1.005' => ['1.005', '201/200'],
-        ];
-    }
-
-    public function testFromPercentageDoesNotTruncateDecimals() {
-        $this->assertSame('29/100', RationalNumber::fromPercentage('29%')->toString());
-        $this->assertSame('57/100', RationalNumber::fromPercentage('57%')->toString());
-    }
-
-    public function testFromFloatWithLargeScientificNotationDoesNotTruncateMantissa() {
-        // 1.15e15 is rendered as "1.15E+15"; 1.15 * 100 = 114.99999999999999
-        $this->assertSame('1150000000000000/1', RationalNumber::fromFloat(1.15e15)->toString());
-    }
-
     public function testFromInt() {
         $value = 5;
         $number = RationalNumber::fromFloat($value);
