@@ -3,6 +3,57 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.11.0] - Unreleased
+
+The last 2.x release before 3.0. It is backward compatible, and it deprecates (with an
+`E_USER_DEPRECATED` warning naming the replacement) everything 3.0 removes: code that runs without
+deprecation warnings on 2.11 is ready for 3.0. See [UPGRADE-3.0.md](UPGRADE-3.0.md).
+
+### Added
+
+- **Library exceptions** in `RationalNumber\Exception`. They all implement the
+  `RationalNumberException` marker interface, and each one extends the type thrown before, so
+  existing `catch` blocks keep working:
+  - `InvalidArgumentException` (extends `\InvalidArgumentException`): invalid input;
+  - `DivisionByZeroException` (extends it): `divideBy()` zero, `reciprocal()` of zero;
+  - `EmptyCollectionException` (extends it): `average()`, `min()`, `max()` of an empty collection;
+  - `IntegerOverflowException` (extends `\ArithmeticError`): any 64-bit overflow.
+- `increaseByPercentage()` / `decreaseByPercentage()` accept a `RationalNumber` rate (the rate as a
+  fraction, as returned by `fromPercentage()`), so a rate can be parsed once and reused:
+  `$price->increaseByPercentage(RationalNumber::fromPercentage('20%'))`.
+- `UPGRADE-3.0.md` migration guide.
+
+### Fixed
+
+- `add()` / `subtract()` threw a `TypeError` instead of an overflow error when the cross-products
+  fit but their sum does not (e.g. `PHP_INT_MAX + 1`).
+- `RationalCollection::min()` / `max()` threw a `TypeError` after `unset($collection[0])`.
+
+### Changed
+
+- `RationalCollection` stays a list indexed from 0 to `count() - 1`: `unset($collection[$i])`
+  shifts the following elements down, and `offsetSet()` only accepts `null` or an integer between
+  0 and `count()`. **String keys (`$collection['price'] = ...`) and indexes that would leave a gap
+  now throw an `InvalidArgumentException`.**
+- `RationalNumber` is now a `final readonly class`.
+- The exact decimal parsing moved to the internal `RationalNumber\Internal\DecimalParser` class
+  (not part of the public API).
+- Development: PHPUnit 11, PSR-12 coding style enforced in CI with php-cs-fixer (`composer cs`).
+
+### Deprecated
+
+All are removed in 3.0:
+
+- `RationalNumberFactory` and `RationalNumberFactoryInterface`: use the static constructors
+  (`new RationalNumber()`, `RationalNumber::fromString()`, `fromFloat()`, ...).
+- The `Contract\ArithmeticOperations`, `Contract\Comparable` and `Contract\NumericValue`
+  interfaces: type against `RationalNumber`.
+- `RationalNumber::reduce()`: numbers are always reduced, remove the call.
+- `RationalNumber::divideFrom($x)`: use `$x->divideBy($this)`.
+- `RationalCollection::clear()` and writing through array access (`[] =`, `[$i] =`, `unset`):
+  collections become immutable in 3.0. Use `$collection = $collection->add($n)` (it already works
+  and is the only form that keeps working in 3.0), `filter()` or `new RationalCollection([...])`.
+
 ## [2.10.0] - 2026-11-11
 
 ### Fixed
