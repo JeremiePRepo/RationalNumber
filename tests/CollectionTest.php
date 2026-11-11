@@ -329,7 +329,61 @@ class CollectionTest extends TestCase
 
         unset($collection[1]);
 
-        $this->assertFalse(isset($collection[1]));
+        // Indexes stay contiguous: the former element 2 moves to index 1.
+        $this->assertCount(2, $collection);
+        $this->assertFalse(isset($collection[2]));
+        $this->assertSame('3/1', $collection[1]->toString());
+        $this->assertSame([0, 1], array_keys($collection->toArray()));
+    }
+
+    public function testMinAndMaxAfterUnsettingTheFirstElement(): void
+    {
+        $collection = new RationalCollection([
+            RationalNumber::fromFloat(1),
+            RationalNumber::fromFloat(5),
+            RationalNumber::fromFloat(3)
+        ]);
+
+        unset($collection[0]);
+
+        $this->assertSame('3/1', $collection->min()->toString());
+        $this->assertSame('5/1', $collection->max()->toString());
+    }
+
+    public function testOffsetSetReplacesAnExistingElement(): void
+    {
+        $collection = new RationalCollection([RationalNumber::fromFloat(1), RationalNumber::fromFloat(2)]);
+
+        $collection[0] = RationalNumber::fromFloat(7);
+
+        $this->assertCount(2, $collection);
+        $this->assertSame('7/1', $collection[0]->toString());
+    }
+
+    public function testOffsetSetRejectsStringKeys(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Offset must be an integer between 0 and 0.');
+
+        $collection = new RationalCollection();
+        $collection['price'] = RationalNumber::fromFloat(5);
+    }
+
+    public function testOffsetSetRejectsIndexesThatWouldLeaveAGap(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Offset must be an integer between 0 and 1.');
+
+        $collection = new RationalCollection([RationalNumber::fromFloat(1)]);
+        $collection[5] = RationalNumber::fromFloat(5);
+    }
+
+    public function testOffsetSetRejectsNegativeIndexes(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        $collection = new RationalCollection([RationalNumber::fromFloat(1)]);
+        $collection[-1] = RationalNumber::fromFloat(5);
     }
 
     // ========== Utility Methods Tests ==========

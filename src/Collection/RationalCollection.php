@@ -272,9 +272,12 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
     /**
      * Set a value at an offset.
      *
+     * The collection stays a list indexed from 0 to count() - 1: the offset must be null (append),
+     * an existing index (replace) or count() (append).
+     *
      * @param mixed $offset The offset to set (null appends to end).
      * @param mixed $value The RationalNumber to set.
-     * @throws InvalidArgumentException if value is not a RationalNumber.
+     * @throws InvalidArgumentException if value is not a RationalNumber or the offset is not a valid index.
      */
     public function offsetSet(mixed $offset, mixed $value): void
     {
@@ -287,15 +290,17 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
             return;
         }
 
-        if (!is_int($offset) && !is_string($offset)) {
-            throw new InvalidArgumentException('Offset must be an integer or string.');
+        $count = count($this->numbers);
+        if (!is_int($offset) || $offset < 0 || $offset > $count) {
+            throw new InvalidArgumentException("Offset must be an integer between 0 and {$count}.");
         }
 
         $this->numbers[$offset] = $value;
     }
 
     /**
-     * Unset a value at an offset.
+     * Unset a value at an offset. The following elements are shifted down so that indexes stay
+     * contiguous (after unset($collection[1]), the former element 2 is at index 1).
      *
      * @param mixed $offset The offset to unset.
      */
@@ -306,5 +311,6 @@ class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
         }
 
         unset($this->numbers[$offset]);
+        $this->numbers = array_values($this->numbers);
     }
 }
