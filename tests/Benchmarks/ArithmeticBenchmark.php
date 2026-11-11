@@ -17,17 +17,17 @@ class ArithmeticBenchmark
     public function benchAddition10k(): array
     {
         $start = microtime(true);
-        
+
         $result = RationalNumber::zero();
         $one = RationalNumber::one();
-        
+
         for ($i = 0; $i < 10000; $i++) {
             $result = $result->add($one);
         }
-        
+
         $duration = microtime(true) - $start;
         $opsPerSecond = 10000 / $duration;
-        
+
         return [
             'name' => 'Addition (10k operations)',
             'duration' => round($duration, 4),
@@ -42,7 +42,7 @@ class ArithmeticBenchmark
     public function benchMultiplication10k(): array
     {
         $start = microtime(true);
-        
+
         // Fixed operands: accumulating the product (1.01^n = 101^n / 100^n)
         // would overflow 64-bit integers after a few iterations.
         $value = RationalNumber::fromFloat(123.45);
@@ -52,10 +52,10 @@ class ArithmeticBenchmark
         for ($i = 0; $i < 10000; $i++) {
             $result = $value->multiply($factor);
         }
-        
+
         $duration = microtime(true) - $start;
         $opsPerSecond = 10000 / $duration;
-        
+
         return [
             'name' => 'Multiplication (10k operations)',
             'duration' => round($duration, 4),
@@ -70,7 +70,7 @@ class ArithmeticBenchmark
     public function benchDivision10k(): array
     {
         $start = microtime(true);
-        
+
         // Fixed operands: accumulating the quotient (2^n / 3^n) would overflow.
         $value = RationalNumber::fromFloat(10000);
         $divisor = new RationalNumber(3, 2); // 1.5
@@ -79,10 +79,10 @@ class ArithmeticBenchmark
         for ($i = 0; $i < 10000; $i++) {
             $result = $value->divideBy($divisor);
         }
-        
+
         $duration = microtime(true) - $start;
         $opsPerSecond = 10000 / $duration;
-        
+
         return [
             'name' => 'Division (10k operations)',
             'duration' => round($duration, 4),
@@ -97,17 +97,17 @@ class ArithmeticBenchmark
     public function benchSubtraction10k(): array
     {
         $start = microtime(true);
-        
+
         $result = RationalNumber::fromFloat(10000);
         $one = RationalNumber::one();
-        
+
         for ($i = 0; $i < 10000; $i++) {
             $result = $result->subtract($one);
         }
-        
+
         $duration = microtime(true) - $start;
         $opsPerSecond = 10000 / $duration;
-        
+
         return [
             'name' => 'Subtraction (10k operations)',
             'duration' => round($duration, 4),
@@ -122,7 +122,7 @@ class ArithmeticBenchmark
     public function benchMixedOperations(): array
     {
         $start = microtime(true);
-        
+
         // Each iteration starts from the same operands: feeding the result back
         // (multiplying by 8/9 every round) would overflow 64-bit integers.
         $a = RationalNumber::fromFloat(10.5);
@@ -137,10 +137,10 @@ class ArithmeticBenchmark
                 ->multiply($twoThirds)
                 ->divideBy($threeQuarters);
         }
-        
+
         $duration = microtime(true) - $start;
         $opsPerSecond = 10000 / $duration; // 4 ops × 2500 iterations
-        
+
         return [
             'name' => 'Mixed Operations (10k total)',
             'duration' => round($duration, 4),

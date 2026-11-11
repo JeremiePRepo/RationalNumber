@@ -22,11 +22,11 @@ class CollectionBenchmark
             $numbers[] = RationalNumber::fromFloat($i * 0.5);
         }
         $collection = new RationalCollection($numbers);
-        
+
         $start = microtime(true);
         $sum = $collection->sum();
         $duration = microtime(true) - $start;
-        
+
         return [
             'name' => 'Collection Sum (1000 elements)',
             'duration' => round($duration, 4),
@@ -44,11 +44,11 @@ class CollectionBenchmark
             $numbers[] = RationalNumber::fromFloat($i);
         }
         $collection = new RationalCollection($numbers);
-        
+
         $start = microtime(true);
         $average = $collection->average();
         $duration = microtime(true) - $start;
-        
+
         return [
             'name' => 'Collection Average (1000 elements)',
             'duration' => round($duration, 4),
@@ -66,11 +66,11 @@ class CollectionBenchmark
             $numbers[] = RationalNumber::fromFloat($i);
         }
         $collection = new RationalCollection($numbers);
-        
+
         $start = microtime(true);
-        $filtered = $collection->filter(fn($n) => $n->isGreaterThan(RationalNumber::fromFloat(500)));
+        $filtered = $collection->filter(fn ($n) => $n->isGreaterThan(RationalNumber::fromFloat(500)));
         $duration = microtime(true) - $start;
-        
+
         return [
             'name' => 'Collection Filter (1000 elements)',
             'duration' => round($duration, 4),
@@ -88,11 +88,11 @@ class CollectionBenchmark
             $numbers[] = RationalNumber::fromFloat($i);
         }
         $collection = new RationalCollection($numbers);
-        
+
         $start = microtime(true);
-        $mapped = $collection->map(fn($n) => $n->multiply(new RationalNumber(2, 1)));
+        $mapped = $collection->map(fn ($n) => $n->multiply(new RationalNumber(2, 1)));
         $duration = microtime(true) - $start;
-        
+
         return [
             'name' => 'Collection Map (1000 elements)',
             'duration' => round($duration, 4),
@@ -110,12 +110,12 @@ class CollectionBenchmark
             $numbers[] = RationalNumber::fromFloat(rand(1, 10000) / 100);
         }
         $collection = new RationalCollection($numbers);
-        
+
         $start = microtime(true);
         $min = $collection->min();
         $max = $collection->max();
         $duration = microtime(true) - $start;
-        
+
         return [
             'name' => 'Collection Min/Max (1000 elements)',
             'duration' => round($duration, 4),
@@ -134,17 +134,17 @@ class CollectionBenchmark
             $numbers[] = RationalNumber::fromFloat($i);
         }
         $collection = new RationalCollection($numbers);
-        
+
         $start = microtime(true);
-        
+
         // Chain filter -> map -> sum
         $result = $collection
-            ->filter(fn($n) => $n->isGreaterThan(RationalNumber::fromFloat(100)))
-            ->map(fn($n) => $n->increaseByPercentage('20%'))
+            ->filter(fn ($n) => $n->isGreaterThan(RationalNumber::fromFloat(100)))
+            ->map(fn ($n) => $n->increaseByPercentage('20%'))
             ->sum();
-        
+
         $duration = microtime(true) - $start;
-        
+
         return [
             'name' => 'Collection Chained Operations',
             'duration' => round($duration, 4),

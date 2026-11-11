@@ -8,10 +8,10 @@ use RationalNumber\RationalNumber;
 
 /**
  * Calculator for percentage operations on rational numbers.
- * 
+ *
  * @deprecated This class is deprecated. Use instance methods on RationalNumber instead.
  *             For example: $number->toPercentage(), $number->increaseByPercentage(), etc.
- * 
+ *
  * This class was created to respect the Single Responsibility Principle by separating
  * percentage-specific logic from core rational number arithmetic. However, the convenience
  * methods on RationalNumber are now the preferred API.
@@ -20,7 +20,7 @@ class PercentageCalculator
 {
     /**
      * Convert a rational number to a percentage string.
-     * 
+     *
      * @deprecated Use RationalNumber::toPercentage() instead.
      * @param RationalNumber $number The rational number to convert.
      * @param int $decimalPlaces The number of decimal places (default: 2).
@@ -32,14 +32,14 @@ class PercentageCalculator
             'PercentageCalculator::toPercentage() is deprecated. Use $number->toPercentage() instead.',
             E_USER_DEPRECATED
         );
-        
+
         $percentage = $number->getFloat() * 100;
         return number_format($percentage, $decimalPlaces) . "%";
     }
 
     /**
      * Create a rational number from a percentage string.
-     * 
+     *
      * @deprecated Use RationalNumber::fromPercentage() instead.
      * @param string $percentage The percentage value (e.g., "50%").
      * @return RationalNumber The rational number representation.
@@ -50,13 +50,13 @@ class PercentageCalculator
             'PercentageCalculator::fromPercentage() is deprecated. Use RationalNumber::fromPercentage() instead.',
             E_USER_DEPRECATED
         );
-        
+
         return RationalNumber::fromPercentage($percentage);
     }
 
     /**
      * Increase a rational number by a percentage.
-     * 
+     *
      * @deprecated Use RationalNumber::increaseByPercentage() instead.
      * @param RationalNumber $number The number to increase.
      * @param string $percentage The percentage to increase by (e.g., "10%").
@@ -68,13 +68,13 @@ class PercentageCalculator
             'PercentageCalculator::increaseBy() is deprecated. Use $number->increaseByPercentage() instead.',
             E_USER_DEPRECATED
         );
-        
+
         return $number->increaseByPercentage($percentage);
     }
 
     /**
      * Decrease a rational number by a percentage.
-     * 
+     *
      * @deprecated Use RationalNumber::decreaseByPercentage() instead.
      * @param RationalNumber $number The number to decrease.
      * @param string $percentage The percentage to decrease by (e.g., "25%").
@@ -86,13 +86,13 @@ class PercentageCalculator
             'PercentageCalculator::decreaseBy() is deprecated. Use $number->decreaseByPercentage() instead.',
             E_USER_DEPRECATED
         );
-        
+
         return $number->decreaseByPercentage($percentage);
     }
 
     /**
      * Calculate what percentage one rational number is of another.
-     * 
+     *
      * @deprecated Use $part->divideBy($whole)->toPercentage() instead.
      * @param RationalNumber $part The part value.
      * @param RationalNumber $whole The whole value.
@@ -105,11 +105,11 @@ class PercentageCalculator
             'PercentageCalculator::percentageOf() is deprecated. Use $part->divideBy($whole)->toPercentage() instead.',
             E_USER_DEPRECATED
         );
-        
+
         if ($whole->isZero()) {
             throw new \InvalidArgumentException("Cannot calculate percentage of zero.");
         }
-        
+
         $ratio = $part->divideBy($whole);
         return $this->toPercentage($ratio, $decimalPlaces);
     }

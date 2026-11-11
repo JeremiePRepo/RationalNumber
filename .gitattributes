@@ -1,0 +1,3 @@
+# PSR-12 requires Unix line endings: keep PHP files in LF on every platform,
+# including Windows checkouts with core.autocrlf=true.
+*.php text eol=lf

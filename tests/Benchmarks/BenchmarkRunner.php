@@ -80,7 +80,7 @@ class BenchmarkRunner
         echo "Average Duration: " . round($totalDuration / $totalBenchmarks, 4) . "s\n";
 
         // Find fastest and slowest
-        usort($this->results, fn($a, $b) => $a['duration'] <=> $b['duration']);
+        usort($this->results, fn ($a, $b) => $a['duration'] <=> $b['duration']);
         $fastest = $this->results[0];
         $slowest = $this->results[count($this->results) - 1];
 
@@ -93,7 +93,7 @@ class BenchmarkRunner
         $markdown = $this->generateMarkdownReport();
         $filename = 'benchmark-results-' . date('Y-m-d-His') . '.md';
         file_put_contents(__DIR__ . '/../../' . $filename, $markdown);
-        
+
         echo "\n✓ Results saved to: {$filename}\n";
     }
 
@@ -108,8 +108,8 @@ class BenchmarkRunner
         $md .= "|-----------|--------------|------------|\n";
 
         foreach ($this->results as $result) {
-            $opsPerSecond = isset($result['ops_per_second']) 
-                ? number_format($result['ops_per_second'], 0) 
+            $opsPerSecond = isset($result['ops_per_second'])
+                ? number_format($result['ops_per_second'], 0)
                 : 'N/A';
             $md .= sprintf(
                 "| %s | %.4f | %s |\n",

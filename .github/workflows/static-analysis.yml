@@ -38,6 +38,9 @@ jobs:
       
       - name: Run PHPStan
         run: composer phpstan
+
+      - name: Check coding style (PSR-12)
+        run: composer cs
       
       - name: Analysis summary
         if: always()

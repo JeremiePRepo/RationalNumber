@@ -11,7 +11,7 @@ use RationalNumber\Contract\NumericValue;
 
 /**
  * Represents an immutable rational number (fraction) with precise arithmetic operations.
- * 
+ *
  * Implements JsonSerializable for seamless JSON encoding/decoding support.
  */
 final class RationalNumber implements ArithmeticOperations, Comparable, NumericValue, \JsonSerializable
@@ -45,13 +45,13 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
         if ($denominator === 0) {
             throw new InvalidArgumentException("Denominator cannot be zero.");
         }
-        
+
         $this->numerator = $numerator;
         $this->denominator = $denominator;
         // Normalize to ensure the denominator is positive.
         $this->normalize();
     }
-    
+
     /**
      * Create a RationalNumber object from a float or int value.
      *
@@ -110,7 +110,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
      * Supports fraction notation (e.g., '1/2', '3/4'), decimal strings (e.g., '0.25'),
      * integer strings (e.g., '5'), and scientific notation (e.g., '1.5e-3').
      * Whitespace around the input and around the fraction separator is tolerated.
-     * 
+     *
      * @param string $input The string to parse into a RationalNumber.
      * @return RationalNumber The RationalNumber object created from the string.
      * @throws InvalidArgumentException if the string format is invalid or empty.
@@ -120,17 +120,17 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
     {
         // Trim whitespace from the entire input
         $input = trim($input);
-        
+
         // Check for empty string
         if ($input === '') {
             throw new InvalidArgumentException("Cannot create RationalNumber from empty string.");
         }
-        
+
         // Try to match fraction notation: "numerator/denominator" with optional whitespace
         if (preg_match('/^([+-]?\d+)\s*\/\s*([+-]?\d+)$/', $input, $matches)) {
             $numeratorStr = $matches[1];
             $denominatorStr = $matches[2];
-            
+
             // Validate for integer overflow before converting to int (exact check on the digits)
             if (!self::fitsInInt(ltrim($numeratorStr, '+-0'))) {
                 throw new \ArithmeticError(
@@ -143,21 +143,21 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
                     "Integer overflow in fraction string '{$input}'. Denominator exceeds PHP_INT_MAX."
                 );
             }
-            
+
             $numerator = (int)$numeratorStr;
             $denominator = (int)$denominatorStr;
-            
+
             // Constructor will handle division by zero validation
             return new self($numerator, $denominator);
         }
-        
+
         // Try to parse as an exact decimal (decimal, integer, or scientific notation),
         // without going through a float.
         $parts = self::parseDecimal($input);
         if ($parts !== null) {
             return self::fromDecimalParts(...$parts);
         }
-        
+
         // Invalid format
         throw new InvalidArgumentException(
             "Invalid string format: '{$input}'. Expected formats: '3/4', '0.25', '5', or scientific notation."
@@ -184,11 +184,11 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
         if (!$number instanceof RationalNumber) {
             throw new InvalidArgumentException("Must be a RationalNumber instance.");
         }
-        
+
         // Check for potential overflow before multiplication
         $this->checkMultiplicationOverflow($this->numerator, $number->getNumerator(), 'numerator multiplication');
         $this->checkMultiplicationOverflow($this->denominator, $number->getDenominator(), 'denominator multiplication');
-        
+
         $newNumerator = $this->numerator * $number->getNumerator();
         $newDenominator = $this->denominator * $number->getDenominator();
         return new RationalNumber($newNumerator, $newDenominator);
@@ -205,14 +205,17 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
         if (!$number instanceof RationalNumber) {
             throw new InvalidArgumentException("Must be a RationalNumber instance.");
         }
-        
+
+        $otherNumerator = $number->getNumerator();
+        $otherDenominator = $number->getDenominator();
+
         // Check for potential overflow in cross-multiplication
-        $this->checkMultiplicationOverflow($this->numerator, $number->getDenominator(), 'addition cross-multiplication');
-        $this->checkMultiplicationOverflow($number->getNumerator(), $this->denominator, 'addition cross-multiplication');
-        $this->checkMultiplicationOverflow($this->denominator, $number->getDenominator(), 'denominator multiplication');
-        
-        $newNumerator = $this->numerator * $number->getDenominator() + $number->getNumerator() * $this->denominator;
-        $newDenominator = $this->denominator * $number->getDenominator();
+        $this->checkMultiplicationOverflow($this->numerator, $otherDenominator, 'addition cross-multiplication');
+        $this->checkMultiplicationOverflow($otherNumerator, $this->denominator, 'addition cross-multiplication');
+        $this->checkMultiplicationOverflow($this->denominator, $otherDenominator, 'denominator multiplication');
+
+        $newNumerator = $this->numerator * $otherDenominator + $otherNumerator * $this->denominator;
+        $newDenominator = $this->denominator * $otherDenominator;
         return new RationalNumber($newNumerator, $newDenominator);
     }
 
@@ -227,17 +230,20 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
         if (!$number instanceof RationalNumber) {
             throw new InvalidArgumentException("Must be a RationalNumber instance.");
         }
-        
+
+        $otherNumerator = $number->getNumerator();
+        $otherDenominator = $number->getDenominator();
+
         // Check for potential overflow in cross-multiplication
-        $this->checkMultiplicationOverflow($this->numerator, $number->getDenominator(), 'subtraction cross-multiplication');
-        $this->checkMultiplicationOverflow($number->getNumerator(), $this->denominator, 'subtraction cross-multiplication');
-        $this->checkMultiplicationOverflow($this->denominator, $number->getDenominator(), 'denominator multiplication');
-        
-        $newNumerator = $this->numerator * $number->getDenominator() - $number->getNumerator() * $this->denominator;
-        $newDenominator = $this->denominator * $number->getDenominator();
+        $this->checkMultiplicationOverflow($this->numerator, $otherDenominator, 'subtraction cross-multiplication');
+        $this->checkMultiplicationOverflow($otherNumerator, $this->denominator, 'subtraction cross-multiplication');
+        $this->checkMultiplicationOverflow($this->denominator, $otherDenominator, 'denominator multiplication');
+
+        $newNumerator = $this->numerator * $otherDenominator - $otherNumerator * $this->denominator;
+        $newDenominator = $this->denominator * $otherDenominator;
         return new RationalNumber($newNumerator, $newDenominator);
     }
-    
+
     /**
      * Divide the current rational number by another RationalNumber object.
      * @param ArithmeticOperations $number The RationalNumber object to divide by.
@@ -259,12 +265,12 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
 
     /**
      * Divide another RationalNumber object by the current rational number (inverse division).
-     * 
+     *
      * This method performs the operation: $number / $this
      * Equivalent to: $number->divideBy($this)
-     * 
+     *
      * Useful for method chaining where you want to divide a value by the result of a calculation.
-     * 
+     *
      * Example:
      * <code>
      * // Divide 100 by the result of a calculation
@@ -272,7 +278,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
      * $result = $divisor->divideFrom(RationalNumber::fromFloat(100));
      * // Instead of: RationalNumber::fromFloat(100)->divideBy($divisor)
      * </code>
-     * 
+     *
      * @param ArithmeticOperations $number The dividend (the number to be divided).
      * @return RationalNumber The result of $number / $this as a new RationalNumber object.
      * @throws InvalidArgumentException if the current instance is zero (division by zero).
@@ -289,7 +295,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
         $reciprocal = $this->reciprocal();
         return $number->multiply($reciprocal);
     }
-    
+
     /**
      * Convert the rational number to a percentage with a specified number of decimal places.
      * @param int $decimalPlaces The number of decimal places for the percentage (default is 2).
@@ -339,7 +345,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
     {
         return new RationalNumber(1, 1);
     }
-    
+
     /**
      * Increase the current rational number by a specified percentage.
      * @param string $percentage The percentage value as a string (e.g., "50%") to increase by.
@@ -355,7 +361,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
 
         return $increasedRationalNumber;
     }
-    
+
     /**
      * Decrease the current rational number by a specified percentage.
      * @param string $percentage The percentage value as a string (e.g., "50%") to decrease by.
@@ -502,10 +508,10 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
 
     /**
      * Raise the rational number to an integer power.
-     * 
+     *
      * Supports positive, negative, and zero exponents.
      * For negative exponents, calculates the power of the reciprocal.
-     * 
+     *
      * @param int $exponent The integer exponent to raise to.
      * @return RationalNumber The result of the exponentiation as a new RationalNumber object.
      * @throws \ArithmeticError if the operation would cause integer overflow.
@@ -516,28 +522,28 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
         if ($exponent === 0) {
             return self::one();
         }
-        
+
         // Negative exponent: (a/b)^(-n) = (b/a)^n
         if ($exponent < 0) {
             return $this->reciprocal()->pow(-$exponent);
         }
-        
+
         // Positive exponent: multiply by itself (exponent - 1) times
         $result = $this;
         for ($i = 1; $i < $exponent; $i++) {
             $result = $result->multiply($this);
         }
-        
+
         return $result;
     }
 
     /**
      * Calculate the square root of the rational number using Newton-Raphson method.
-     * 
+     *
      * Returns a rational approximation of the square root.
      * The precision parameter controls the number of iterations (higher = more accurate).
      * Note: Precision is limited to prevent overflow with very large fractions.
-     * 
+     *
      * @param int $precision Number of iterations for the approximation (default: 10, max: 10).
      * @return RationalNumber A rational approximation of the square root.
      * @throws InvalidArgumentException if attempting to take square root of a negative number.
@@ -547,31 +553,31 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
         if ($this->numerator < 0) {
             throw new InvalidArgumentException("Cannot calculate square root of a negative number.");
         }
-        
+
         if ($this->isZero()) {
             return self::zero();
         }
-        
+
         // Limit precision to avoid overflow (max 10 iterations)
         $precision = min($precision, 10);
-        
+
         // Use float-based Newton-Raphson for stability
         $floatSqrt = sqrt($this->getFloat());
         $x = $floatSqrt;
         $thisFloat = $this->getFloat();
-        
+
         // Perform Newton-Raphson iterations in float space
         for ($i = 0; $i < $precision; $i++) {
             $x = ($x + $thisFloat / $x) / 2;
         }
-        
+
         // Convert final result to RationalNumber
         return RationalNumber::fromFloat($x);
     }
 
     /**
      * Return the minimum of this rational number and another.
-     * 
+     *
      * @param RationalNumber $other The rational number to compare with.
      * @return RationalNumber The smaller of the two rational numbers.
      */
@@ -582,7 +588,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
 
     /**
      * Return the maximum of this rational number and another.
-     * 
+     *
      * @param RationalNumber $other The rational number to compare with.
      * @return RationalNumber The larger of the two rational numbers.
      */
@@ -593,10 +599,10 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
 
     /**
      * Round the rational number to a specified denominator.
-     * 
+     *
      * Rounds to the nearest rational number with the given denominator.
      * Useful for rounding prices to cents (denominator = 100).
-     * 
+     *
      * @param int $denominator The target denominator (default: 1 for integer rounding).
      * @return RationalNumber The rounded rational number.
      * @throws InvalidArgumentException if denominator is less than or equal to zero.
@@ -606,17 +612,17 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
         if ($denominator <= 0) {
             throw new InvalidArgumentException("Denominator must be greater than zero.");
         }
-        
+
         $numerator = (int) round(
             $this->numerator * $denominator / $this->denominator
         );
-        
+
         return new self($numerator, $denominator);
     }
 
     /**
      * Round down to the nearest integer (floor function).
-     * 
+     *
      * @return RationalNumber The largest integer less than or equal to this number.
      */
     public function floor(): RationalNumber
@@ -627,7 +633,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
 
     /**
      * Round up to the nearest integer (ceiling function).
-     * 
+     *
      * @return RationalNumber The smallest integer greater than or equal to this number.
      */
     public function ceil(): RationalNumber
@@ -686,10 +692,10 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
 
     /**
      * Serialize the rational number for JSON encoding.
-     * 
+     *
      * Returns an array containing the numerator, denominator, and convenient representations.
      * Automatically called by json_encode().
-     * 
+     *
      * @return array{numerator: int, denominator: int, float: float, string: string} The serialized representation.
      */
     public function jsonSerialize(): array
@@ -704,10 +710,10 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
 
     /**
      * Export the rational number to an array (minimal format).
-     * 
+     *
      * Returns only the essential numerator and denominator for storage.
      * Useful for caching or database storage.
-     * 
+     *
      * @return array{numerator: int, denominator: int} Array with numerator and denominator.
      */
     public function toArray(): array
@@ -720,9 +726,9 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
 
     /**
      * Create a RationalNumber from an array representation.
-     * 
+     *
      * Expects an array with 'numerator' and 'denominator' keys.
-     * 
+     *
      * @param array<mixed, mixed> $data Array containing 'numerator' and 'denominator' keys.
      * @return RationalNumber The reconstructed RationalNumber object.
      * @throws InvalidArgumentException if required keys are missing or invalid.
@@ -734,23 +740,23 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
                 "Array must contain 'numerator' and 'denominator' keys."
             );
         }
-        
+
         if (!is_int($data['numerator']) && !is_numeric($data['numerator'])) {
             throw new InvalidArgumentException("Numerator must be an integer or numeric value.");
         }
-        
+
         if (!is_int($data['denominator']) && !is_numeric($data['denominator'])) {
             throw new InvalidArgumentException("Denominator must be an integer or numeric value.");
         }
-        
+
         return new self((int)$data['numerator'], (int)$data['denominator']);
     }
 
     /**
      * Create a RationalNumber from a JSON string.
-     * 
+     *
      * Parses JSON and extracts numerator and denominator.
-     * 
+     *
      * @param string $json JSON string containing rational number data.
      * @return RationalNumber The reconstructed RationalNumber object.
      * @throws InvalidArgumentException if JSON is invalid or required keys are missing.
@@ -758,17 +764,17 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
     public static function fromJson(string $json): RationalNumber
     {
         $data = json_decode($json, true);
-        
+
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new InvalidArgumentException(
                 "Invalid JSON: " . json_last_error_msg()
             );
         }
-        
+
         if (!is_array($data)) {
             throw new InvalidArgumentException("JSON must decode to an array.");
         }
-        
+
         return self::fromArray($data);
     }
 
@@ -787,7 +793,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
 
     /**
      * Check if a multiplication operation would cause integer overflow.
-     * 
+     *
      * @param int $a The first operand.
      * @param int $b The second operand.
      * @param string $operation A description of the operation for error message context.
@@ -800,12 +806,12 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
         if ($a === 0 || $b === 0) {
             return;
         }
-        
+
         // Check if the result would exceed PHP_INT_MAX or go below PHP_INT_MIN
         // Use division to check: if a * b would overflow, then |a| > PHP_INT_MAX / |b|
         $absA = abs($a);
         $absB = abs($b);
-        
+
         if ($absA > PHP_INT_MAX / $absB) {
             throw new \ArithmeticError(self::overflowMessage(
                 sprintf("Operation would cause integer overflow during %s.", $operation)
@@ -951,7 +957,7 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
             $this->numerator = -$this->numerator;
             $this->denominator = -$this->denominator;
         }
-        
+
         // Reduce to simplest form
         $gcd = $this->gcd($this->numerator, $this->denominator);
         if ($gcd !== 1) {
