@@ -3,6 +3,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+
+- **`fromFloat()` truncated decimals**: the numerator was computed with `(int)($value * 10^n)`,
+  so floating-point products landing just below the exact integer lost one unit
+  (e.g. `fromFloat(0.29)` returned `7/25` instead of `29/100`, `1.15` returned `57/50`).
+  The value is now rounded. This also fixes `fromString()` and `fromPercentage()` for decimal
+  inputs, and the large-exponent scientific notation path (e.g. `1.15e15`).
+  - **Added 20 regression tests**
+
 ## [2.9.0] - 2026-02-16
 
 ### Added

@@ -69,8 +69,10 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
             }
         }
 
-        // Convert the scalar value to a rational number
-        $numerator = (int)($value * $denominator);
+        // Convert the scalar value to a rational number.
+        // Round instead of truncating: $value * $denominator is computed in floating point
+        // and may land just below the exact integer (e.g. 0.29 * 100 = 28.999999999999996).
+        $numerator = (int) round($value * $denominator);
         return new RationalNumber($numerator, $denominator);
     }
 
@@ -855,8 +857,9 @@ final class RationalNumber implements ArithmeticOperations, Comparable, NumericV
                 }
             }
             
-            $numerator = (int)$mantissa;
-            
+            // Round instead of truncating (e.g. 1.15 * 100 = 114.99999999999999)
+            $numerator = (int) round($mantissa);
+
             // Check if multiplying by 10^exponent would overflow
             if ($numerator != 0 && abs($multiplier) > PHP_INT_MAX / abs($numerator)) {
                 throw new \ArithmeticError(
