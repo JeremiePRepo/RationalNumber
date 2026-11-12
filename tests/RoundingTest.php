@@ -321,6 +321,11 @@ class RoundingTest extends TestCase
         yield 'thousands separators' => [new RationalNumber(1234567, 100), 1, '1,234,567.0%'];
         yield 'beyond float precision' => [new RationalNumber(123456789012345678, 1000), 2, '12,345,678,901,234,567.80%'];
         yield 'small value, many decimals' => [new RationalNumber(1, 7), 10, '14.2857142857%'];
+        yield 'integer, 16 decimals' => [new RationalNumber(10), 16, '1,000.0000000000000000%'];
+        yield 'PHP_INT_MAX (100x does not fit in an int)' => [new RationalNumber(PHP_INT_MAX), 2, '922,337,203,685,477,580,700.00%'];
+        yield '-PHP_INT_MAX / 3' => [new RationalNumber(-PHP_INT_MAX, 3), 1, '-307,445,734,561,825,860,233.3%'];
+        yield 'rounding carries into the integer part' => [new RationalNumber(1999, 2000), 1, '100.0%'];
+        yield 'rounding carries past 100' => [new RationalNumber(39999, 20000), 2, '200.00%'];
     }
 
     #[DataProvider('percentageProvider')]

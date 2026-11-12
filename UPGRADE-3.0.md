@@ -99,8 +99,9 @@ $root = $n->sqrt(10);   // 2.x: 10 iterations; 3.0: InvalidArgumentException (ma
 $root = $n->sqrt(6);    // 3.0: rounded to 6 decimal places, e.g. 707107/500000 for 2
 ```
 
-It throws an `IntegerOverflowException` when `value × 10^(2 × $decimals)` does not fit in a 64-bit
-integer. For large values, use fewer decimal places.
+It throws an `IntegerOverflowException` only when `sqrt(value) × 10^$decimals` exceeds about
+4.6 × 10^17. With 9 decimals, that means values above about 2 × 10^17. For such values, use fewer
+decimal places. With 0 decimals, any value works.
 
 ## Behaviour changes
 

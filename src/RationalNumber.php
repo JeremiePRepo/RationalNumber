@@ -31,6 +31,15 @@ final readonly class RationalNumber implements \JsonSerializable
      */
     private const MAX_SQRT_DECIMALS = 9;
 
+    /**
+     * Largest root before a sqrt() digit step: then 100 * rest + 99 (rest <= 2 * root) and
+     * 10 * root + 9 fit in an int.
+     */
+    private const MAX_SQRT_STEP_ROOT = 46116860184273878; // intdiv(PHP_INT_MAX, 200) - 1
+
+    /** intdiv(PHP_INT_MAX, 100): the largest value that can be multiplied by 100. */
+    private const MAX_INT_DIV_100 = 92233720368547758;
+
     private int $numerator;
     private int $denominator;
 
@@ -276,8 +285,13 @@ final readonly class RationalNumber implements \JsonSerializable
 
     /**
      * Convert the rational number to a percentage with a specified number of decimal places.
-     * @param int $decimalPlaces The number of decimal places for the percentage (default is 2).
-     * @return string The rational number as a percentage string.
+     *
+     * The result is exact for any value: the percentage is rounded half away from zero (as
+     * number_format()) without going through a float.
+     *
+     * @param int $decimalPlaces The number of decimal places for the percentage, from 0 to 16 (default is 2).
+     * @return string The rational number as a percentage string, e.g. "1,234.50%".
+     * @throws InvalidArgumentException if $decimalPlaces is out of range.
      */
     public function toPercentage(int $decimalPlaces = 2): string
     {
@@ -287,20 +301,32 @@ final readonly class RationalNumber implements \JsonSerializable
             );
         }
 
-        // Exact: the percentage scaled by 10^decimals, rounded half away from zero (as number_format()).
+        // |x| = q + r / den, so |x| * 100 = 100 * q + r * 100 / den. The integer part q is only
+        // written out (never multiplied, so no overflow); the fraction is scaled and rounded.
         $scale = 10 ** $decimalPlaces;
-        $scaled = $this->roundedMultiple(100 * $scale);
+        $quotient = intdiv(abs($this->numerator), $this->denominator);
+        $fraction = $this->roundedFraction(100 * $scale);   // 0 to 100 * scale
+
+        // Percent units of the fraction (0 to 100): 100 carries into the integer part.
+        $percent = intdiv($fraction, $scale);
+        if ($percent === 100) {
+            $quotient++;
+            $percent = 0;
+        }
 
         // At least one digit before the decimal point: 5 with 2 decimals is "0.05".
-        $digits = str_pad((string) abs($scaled), $decimalPlaces + 1, '0', STR_PAD_LEFT);
-        $integerLength = strlen($digits) - $decimalPlaces;
-        $integerDigits = substr($digits, 0, $integerLength);
-        $fractionDigits = substr($digits, $integerLength);
+        $integerDigits = $quotient > 0
+            ? $quotient . str_pad((string) $percent, 2, '0', STR_PAD_LEFT)
+            : (string) $percent;
+        $fractionDigits = $decimalPlaces > 0
+            ? '.' . str_pad((string) ($fraction % $scale), $decimalPlaces, '0', STR_PAD_LEFT)
+            : '';
 
         // Same format as number_format(): "," between thousands, "." before decimals, no "-0".
         $grouped = strrev(implode(',', str_split(strrev($integerDigits), 3)));
+        $negative = $this->numerator < 0 && ($quotient > 0 || $fraction > 0);
 
-        return ($scaled < 0 ? '-' : '') . $grouped . ($fractionDigits === '' ? '' : '.' . $fractionDigits) . '%';
+        return ($negative ? '-' : '') . $grouped . $fractionDigits . '%';
     }
 
     /**
@@ -483,22 +509,33 @@ final readonly class RationalNumber implements \JsonSerializable
      */
     private function roundedMultiple(int $multiplier): int
     {
-        // |x| * m = (q + r / den) * m = q * m + floor(r * m / den) + remainder / den
+        // |x| * m = (q + r / den) * m = q * m + round(r * m / den)
         $q = intdiv(abs($this->numerator), $this->denominator);
-        $r = abs($this->numerator) % $this->denominator;
+        $fraction = $this->roundedFraction($multiplier);
 
         self::checkMultiplicationOverflow($q, $multiplier, 'rounding');
-        [$fraction, $remainder] = self::mulDivMod($r, $multiplier, $this->denominator);
-
-        // Round half away from zero: up when remainder / den >= 1/2 (2 * remainder could overflow).
-        $roundUp = $remainder >= $this->denominator - $remainder ? 1 : 0;
         $magnitude = $q * $multiplier;
-        if ($magnitude > PHP_INT_MAX - $fraction - $roundUp) {
+        if ($magnitude > PHP_INT_MAX - $fraction) {
             throw IntegerOverflowException::create("Operation would cause integer overflow during rounding.");
         }
-        $magnitude += $fraction + $roundUp;
+        $magnitude += $fraction;
 
         return $this->numerator < 0 ? -$magnitude : $magnitude;
+    }
+
+    /**
+     * The fractional part of |x| multiplied by $multiplier, rounded to the nearest integer, halves
+     * away from zero: round((|n| mod den) * m / den), between 0 and m. Exact, and it never overflows.
+     *
+     * @param int $multiplier A positive multiplier.
+     */
+    private function roundedFraction(int $multiplier): int
+    {
+        $r = abs($this->numerator) % $this->denominator;
+        [$fraction, $remainder] = self::mulDivMod($r, $multiplier, $this->denominator);
+
+        // Up when remainder / den >= 1/2 (2 * remainder could overflow). fraction < m, so +1 fits.
+        return $remainder >= $this->denominator - $remainder ? $fraction + 1 : $fraction;
     }
 
     /**
@@ -672,7 +709,8 @@ final readonly class RationalNumber implements \JsonSerializable
      * @param int $decimals Number of decimal places, from 0 to 9.
      * @return RationalNumber The rounded square root, with denominator 10^$decimals (before reduction).
      * @throws InvalidArgumentException if the number is negative or $decimals is out of range.
-     * @throws IntegerOverflowException if the number scaled by 10^(2 * $decimals) does not fit in an int.
+     * @throws IntegerOverflowException if sqrt(x) * 10^$decimals is above about 4.6 * 10^17
+     *                                  (never with 0 decimals; with 9 decimals, x above about 2 * 10^17).
      */
     public function sqrt(int $decimals): RationalNumber
     {
@@ -684,18 +722,52 @@ final readonly class RationalNumber implements \JsonSerializable
             throw new InvalidArgumentException("Decimal places must be between 0 and " . self::MAX_SQRT_DECIMALS . ".");
         }
 
-        // sqrt(x) * 10^d = sqrt(x * 10^(2d)). With X = x * 10^(2d) = N + rest / den (N integer),
-        // floor(sqrt(X)) = isqrt(N).
-        $scale = 10 ** (2 * $decimals);
-        $quotient = intdiv($this->numerator, $this->denominator);
-        self::checkMultiplicationOverflow($quotient, $scale, 'square root');
-        [$fraction, $rest] = self::mulDivMod($this->numerator % $this->denominator, $scale, $this->denominator);
-        if ($quotient * $scale > PHP_INT_MAX - $fraction) {
-            throw IntegerOverflowException::create("Operation would cause integer overflow during square root.");
-        }
-        $n = $quotient * $scale + $fraction;
+        // Digit by digit, as in long division: start from the integer square root of the integer
+        // part of x, then append one decimal per step, bringing down the next two decimal digits
+        // of x. Invariant after k steps: root^2 + rest + r / den = x * 100^k, with 0 <= rest <= 2 * root,
+        // so the intermediate values stay of the order of the result.
+        $r = $this->numerator % $this->denominator;
+        $root = self::isqrt(intdiv($this->numerator, $this->denominator));
+        $rest = intdiv($this->numerator, $this->denominator) - $root * $root;
 
-        // Integer square root: the float estimate is corrected to be exact.
+        for ($i = 0; $i < $decimals; $i++) {
+            if ($root > self::MAX_SQRT_STEP_ROOT) {
+                throw IntegerOverflowException::create("Operation would cause integer overflow during square root.");
+            }
+
+            // The next two decimal digits of x: floor(r * 100 / den), and the new remainder.
+            if ($r <= self::MAX_INT_DIV_100) {
+                $pair = intdiv($r * 100, $this->denominator);
+                $r = $r * 100 % $this->denominator;
+            } else {
+                [$pair, $r] = self::mulDivMod($r, 100, $this->denominator);
+            }
+            $current = 100 * $rest + $pair;
+
+            // Largest digit with (20 * root + digit) * digit <= current; the estimate is never too low.
+            $twentyRoot = 20 * $root;
+            $digit = min(9, $twentyRoot === 0 ? self::isqrt($current) : intdiv($current, $twentyRoot));
+            while (($twentyRoot + $digit) * $digit > $current) {
+                $digit--;
+            }
+
+            $rest = $current - ($twentyRoot + $digit) * $digit;
+            $root = 10 * $root + $digit;
+        }
+
+        // Round to nearest: up when root^2 + rest + r / den >= (root + 1/2)^2 = root^2 + root + 1/4.
+        $roundUp = $rest > $root
+            || ($rest === $root && $r >= intdiv($this->denominator, 4) + ($this->denominator % 4 === 0 ? 0 : 1));
+
+        return new self($roundUp ? $root + 1 : $root, 10 ** $decimals);
+    }
+
+    /**
+     * Integer square root: the largest integer whose square is at most $n (for $n >= 0).
+     */
+    private static function isqrt(int $n): int
+    {
+        // The float estimate is corrected to be exact.
         $root = (int) sqrt($n);
         while ($root * $root > $n) {
             $root--;
@@ -704,12 +776,7 @@ final readonly class RationalNumber implements \JsonSerializable
             $root++;
         }
 
-        // Round to nearest: up when X >= (root + 1/2)^2 = root^2 + root + 1/4.
-        $excess = $n - $root * $root;
-        $roundUp = $excess > $root
-            || ($excess === $root && $rest >= intdiv($this->denominator, 4) + ($this->denominator % 4 === 0 ? 0 : 1));
-
-        return new self($roundUp ? $root + 1 : $root, 10 ** $decimals);
+        return $root;
     }
 
     /**
@@ -743,6 +810,7 @@ final readonly class RationalNumber implements \JsonSerializable
      * @param int $denominator The target denominator (default: 1 for integer rounding).
      * @return RationalNumber The rounded rational number.
      * @throws InvalidArgumentException if denominator is less than or equal to zero.
+     * @throws IntegerOverflowException if the rounded numerator does not fit in an int.
      */
     public function round(int $denominator = 1): RationalNumber
     {

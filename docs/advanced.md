@@ -48,8 +48,10 @@ $sqrt2 = (new RationalNumber(2))->sqrt(6);
 echo $sqrt2->toString();  // "707107/500000" (1.414214)
 ```
 
-A negative number throws an `InvalidArgumentException`. If `value × 10^(2 × $decimals)` does not
-fit in a 64-bit integer, an `IntegerOverflowException` is thrown: lower `$decimals` for large values.
+A negative number throws an `InvalidArgumentException`. The root is computed digit by digit, so
+intermediate values stay of the order of the result: an `IntegerOverflowException` is only thrown
+when `sqrt(value) × 10^$decimals` exceeds about 4.6 × 10^17 (with 9 decimals, values above about
+2 × 10^17). With 0 decimals, any value works.
 
 ### Min and Max Operations
 
@@ -152,7 +154,7 @@ try {
 **Key points:**
 - Overflow detection applies to `multiply()`, `add()`, `subtract()` operations
 - `pow()` can also trigger overflow, especially with large exponents
-- `sqrt($decimals)` throws when `value × 10^(2 × $decimals)` does not fit in an integer
+- `sqrt($decimals)` throws when `sqrt(value) × 10^$decimals` exceeds about 4.6 × 10^17
 - Large intermediate values can overflow even if the final result would fit in memory
 - Throws `RationalNumber\Exception\IntegerOverflowException` (an `\OverflowException`) before
   the overflow occurs

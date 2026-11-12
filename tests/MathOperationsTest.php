@@ -149,6 +149,9 @@ class MathOperationsTest extends TestCase
         yield 'exact tie 1.5 rounds up' => [new RationalNumber(9, 4), 0, '2/1'];
         yield 'just below the tie' => [new RationalNumber(56, 25), 0, '1/1'];
         yield 'PHP_INT_MAX, beyond float precision' => [new RationalNumber(PHP_INT_MAX), 0, '3037000500/1'];
+        yield 'sqrt(10), 9 decimals' => [new RationalNumber(10), 9, '158113883/50000000'];
+        yield 'PHP_INT_MAX, 8 decimals' => [new RationalNumber(PHP_INT_MAX), 8, '303700049997604969/100000000'];
+        yield '10^17 / 3, 9 decimals' => [new RationalNumber(10 ** 17, 3), 9, '182574185835055371/1000000000'];
         yield 'tiny value rounds to zero' => [new RationalNumber(1, 1000000000), 2, '0/1'];
     }
 
