@@ -432,6 +432,39 @@ class PHP83EdgeCasesTest extends TestCase
     }
 
     /**
+     * @return iterable<string, array{RationalNumber, string, RationalNumber, string}>
+     */
+    public static function cancellingOperationsProvider(): iterable
+    {
+        $twoTo62 = 1 << 62;
+        $twoTo60 = 1 << 60;
+
+        yield '(2^62/3) * (3/2^62)' => [new RationalNumber($twoTo62, 3), 'multiply', new RationalNumber(3, $twoTo62), '1/1'];
+        yield '(MAX/2) * (2/MAX)' => [new RationalNumber(PHP_INT_MAX, 2), 'multiply', new RationalNumber(2, PHP_INT_MAX), '1/1'];
+        yield '(2^62/3) / (2^61/3)' => [new RationalNumber($twoTo62, 3), 'divideBy', new RationalNumber($twoTo62 >> 1, 3), '2/1'];
+        yield '1/2^62 + 1/2^62' => [new RationalNumber(1, $twoTo62), 'add', new RationalNumber(1, $twoTo62), '1/2305843009213693952'];
+        yield '3/2^62 - 1/2^62' => [new RationalNumber(3, $twoTo62), 'subtract', new RationalNumber(1, $twoTo62), '1/2305843009213693952'];
+        yield '1/(3 * 2^60) + 1/2^60' => [new RationalNumber(1, 3 * $twoTo60), 'add', new RationalNumber(1, $twoTo60), '1/864691128455135232'];
+    }
+
+    /**
+     * The cross products overflow, but the result fits: the operands are cancelled first.
+     */
+    #[DataProvider('cancellingOperationsProvider')]
+    public function testOperationsCancelBeforeMultiplying(RationalNumber $x, string $operation, RationalNumber $y, string $expected): void
+    {
+        $result = match ($operation) {
+            'multiply' => $x->multiply($y),
+            'divideBy' => $x->divideBy($y),
+            'add' => $x->add($y),
+            'subtract' => $x->subtract($y),
+            default => throw new \LogicException($operation),
+        };
+
+        $this->assertSame($expected, $result->toString());
+    }
+
+    /**
      * Products just above PHP_INT_MAX, where a float bound (PHP_INT_MAX / 2 = 2^62) is not exact.
      *
      * @return iterable<string, array{callable(): mixed}>

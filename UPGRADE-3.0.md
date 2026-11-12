@@ -124,6 +124,9 @@ decimal places. With 0 decimals, any value works.
 
 ## Behaviour changes
 
+- `multiply()`, `divideBy()`, `add()` and `subtract()` cancel common factors before multiplying,
+  so some operations that threw `IntegerOverflowException` in 2.x now return the (correct) result,
+  e.g. `(2^62/3) × (3/2^62)` = `1`. No result that worked before changes.
 - `round()`, `floor()`, `ceil()` and `toPercentage()` use exact integer arithmetic instead of floats.
   Results are unchanged for usual values. Only numbers above 2^53, which were wrong before, change.
 - `round($denominator)` throws an `IntegerOverflowException` when the rounded numerator does not fit

@@ -204,67 +204,80 @@ final readonly class RationalNumber implements \JsonSerializable
      */
     public function multiply(RationalNumber $number): RationalNumber
     {
-        // Check for potential overflow before multiplication
-        self::checkMultiplicationOverflow($this->numerator, $number->getNumerator(), 'numerator multiplication');
-        self::checkMultiplicationOverflow($this->denominator, $number->getDenominator(), 'denominator multiplication');
+        $a = $this->numerator;
+        $b = $this->denominator;
+        $c = $number->numerator;
+        $d = $number->denominator;
 
-        $newNumerator = $this->numerator * $number->getNumerator();
-        $newDenominator = $this->denominator * $number->getDenominator();
-        return new RationalNumber($newNumerator, $newDenominator);
+        // Common case: both products fit (the constructor reduces the result).
+        if (self::productFits($a, $c) && self::productFits($b, $d)) {
+            return new self($a * $c, $b * $d);
+        }
+
+        // Cancel crosswise first. a/b and c/d are reduced, so the result is reduced too and the
+        // products overflow only when the result itself does not fit in an int.
+        $g1 = self::gcd($a, $d);
+        $g2 = self::gcd($c, $b);
+
+        return new self(
+            self::mulChecked(intdiv($a, $g1), intdiv($c, $g2), 'multiplication'),
+            self::mulChecked(intdiv($b, $g2), intdiv($d, $g1), 'multiplication')
+        );
     }
 
     /**
      * Add the current rational number to another RationalNumber object.
      * @param RationalNumber $number The RationalNumber object to add.
      * @return RationalNumber The result of the addition as a new RationalNumber object.
-     * @throws IntegerOverflowException if the operation would cause integer overflow.
+     * @throws IntegerOverflowException if the result, or in rare cases an intermediate sum, does not fit in an int.
      */
     public function add(RationalNumber $number): RationalNumber
     {
-        $otherNumerator = $number->getNumerator();
-        $otherDenominator = $number->getDenominator();
-
-        // Check for potential overflow in cross-multiplication
-        self::checkMultiplicationOverflow($this->numerator, $otherDenominator, 'addition cross-multiplication');
-        self::checkMultiplicationOverflow($otherNumerator, $this->denominator, 'addition cross-multiplication');
-        self::checkMultiplicationOverflow($this->denominator, $otherDenominator, 'denominator multiplication');
-
-        $left = $this->numerator * $otherDenominator;
-        $right = $otherNumerator * $this->denominator;
-        if ($right > 0 ? $left > PHP_INT_MAX - $right : $left < -PHP_INT_MAX - $right) {
-            throw IntegerOverflowException::during('addition');
-        }
-
-        $newNumerator = $left + $right;
-        $newDenominator = $this->denominator * $otherDenominator;
-        return new RationalNumber($newNumerator, $newDenominator);
+        return $this->addFraction($number->numerator, $number->denominator, 'addition');
     }
 
     /**
      * Subtract another RationalNumber object from the current rational number.
      * @param RationalNumber $number The RationalNumber object to subtract.
      * @return RationalNumber The result of the subtraction as a new RationalNumber object.
-     * @throws IntegerOverflowException if the operation would cause integer overflow.
+     * @throws IntegerOverflowException if the result, or in rare cases an intermediate sum, does not fit in an int.
      */
     public function subtract(RationalNumber $number): RationalNumber
     {
-        $otherNumerator = $number->getNumerator();
-        $otherDenominator = $number->getDenominator();
+        // -c always fits: PHP_INT_MIN is never stored.
+        return $this->addFraction(-$number->numerator, $number->denominator, 'subtraction');
+    }
 
-        // Check for potential overflow in cross-multiplication
-        self::checkMultiplicationOverflow($this->numerator, $otherDenominator, 'subtraction cross-multiplication');
-        self::checkMultiplicationOverflow($otherNumerator, $this->denominator, 'subtraction cross-multiplication');
-        self::checkMultiplicationOverflow($this->denominator, $otherDenominator, 'denominator multiplication');
+    /**
+     * This number plus c/d (d > 0, c/d reduced).
+     *
+     * @throws IntegerOverflowException if the result, or the sum a * (d / g) + c * (b / g), does not fit.
+     */
+    private function addFraction(int $c, int $d, string $operation): self
+    {
+        $a = $this->numerator;
+        $b = $this->denominator;
 
-        $left = $this->numerator * $otherDenominator;
-        $right = $otherNumerator * $this->denominator;
-        if ($right > 0 ? $left < -PHP_INT_MAX + $right : $left > PHP_INT_MAX + $right) {
-            throw IntegerOverflowException::during('subtraction');
+        // Common case: a/b + c/d = (a * d + c * b) / (b * d) when everything fits.
+        if (self::productFits($a, $d) && self::productFits($c, $b) && self::productFits($b, $d)) {
+            $left = $a * $d;
+            $right = $c * $b;
+            if ($right > 0 ? $left <= PHP_INT_MAX - $right : $left >= -PHP_INT_MAX - $right) {
+                return new self($left + $right, $b * $d);
+            }
         }
 
-        $newNumerator = $left - $right;
-        $newDenominator = $this->denominator * $otherDenominator;
-        return new RationalNumber($newNumerator, $newDenominator);
+        // Knuth (TAOCP 4.5.1): with g = gcd(b, d), t = a * (d / g) + c * (b / g) and g2 = gcd(t, g),
+        // the reduced sum is (t / g2) / ((b / g) * (d / g2)). Only t can overflow when the result fits.
+        $g = self::gcd($b, $d);
+        $t = self::addChecked(
+            self::mulChecked($a, intdiv($d, $g), $operation),
+            self::mulChecked($c, intdiv($b, $g), $operation),
+            $operation
+        );
+        $g2 = self::gcd($t, $g);
+
+        return new self(intdiv($t, $g2), self::mulChecked(intdiv($b, $g), intdiv($d, $g2), $operation));
     }
 
     /**
@@ -344,8 +357,7 @@ final readonly class RationalNumber implements \JsonSerializable
         $value = self::fromString(rtrim(trim($percentage), '%'));
 
         // Divide by 100 directly rather than through multiply(): one allocation and one GCD fewer.
-        self::checkMultiplicationOverflow($value->denominator, 100, 'denominator multiplication');
-        return new self($value->numerator, $value->denominator * 100);
+        return new self($value->numerator, self::mulChecked($value->denominator, 100, 'percentage conversion'));
     }
 
     /**
@@ -513,9 +525,7 @@ final readonly class RationalNumber implements \JsonSerializable
         $q = intdiv(abs($this->numerator), $this->denominator);
         $fraction = $this->roundedFraction($multiplier);
 
-        self::checkMultiplicationOverflow($q, $multiplier, 'rounding');
-        self::checkAdditionOverflow($q * $multiplier, $fraction, 'rounding');
-        $magnitude = $q * $multiplier + $fraction;
+        $magnitude = self::addChecked(self::mulChecked($q, $multiplier, 'rounding'), $fraction, 'rounding');
 
         return $this->numerator < 0 ? -$magnitude : $magnitude;
     }
@@ -549,9 +559,7 @@ final readonly class RationalNumber implements \JsonSerializable
         }
 
         // a * b / m = a * floor(b / m) + a * (b mod m) / m. The first term is the big one.
-        $bOverM = intdiv($b, $m);
-        self::checkMultiplicationOverflow($a, $bOverM, 'rounding');
-        $quotient = $a * $bOverM;
+        $quotient = self::mulChecked($a, intdiv($b, $m), 'rounding');
 
         // a * (b mod m), both factors below m: binary multiplication modulo m, keeping the quotient
         // (it stays below b mod m) and the remainder below m at every step. Starting at the highest
@@ -580,9 +588,7 @@ final readonly class RationalNumber implements \JsonSerializable
             }
         }
 
-        self::checkAdditionOverflow($quotient, $q, 'rounding');
-
-        return [$quotient + $q, $r];
+        return [self::addChecked($quotient, $q, 'rounding'), $r];
     }
 
     /**
@@ -981,31 +987,27 @@ final readonly class RationalNumber implements \JsonSerializable
     }
 
     /**
-     * Check if a multiplication operation would cause integer overflow.
-     *
-     * @param int $a The first operand.
-     * @param int $b The second operand.
-     * @param string $operation A description of the operation for error message context.
-     * @return void
-     * @throws IntegerOverflowException if the multiplication would overflow.
+     * $a * $b, or an IntegerOverflowException naming $operation if it does not fit in an int.
      */
-    private static function checkMultiplicationOverflow(int $a, int $b, string $operation): void
+    private static function mulChecked(int $a, int $b, string $operation): int
     {
         if (!self::productFits($a, $b)) {
             throw IntegerOverflowException::during($operation);
         }
+
+        return $a * $b;
     }
 
     /**
-     * Check if the sum of two non-negative ints would cause integer overflow.
-     *
-     * @throws IntegerOverflowException if $a + $b > PHP_INT_MAX.
+     * $a + $b, or an IntegerOverflowException naming $operation if |$a + $b| > PHP_INT_MAX.
      */
-    private static function checkAdditionOverflow(int $a, int $b, string $operation): void
+    private static function addChecked(int $a, int $b, string $operation): int
     {
-        if ($a > PHP_INT_MAX - $b) {
+        if ($b > 0 ? $a > PHP_INT_MAX - $b : $a < -PHP_INT_MAX - $b) {
             throw IntegerOverflowException::during($operation);
         }
+
+        return $a + $b;
     }
 
     /**

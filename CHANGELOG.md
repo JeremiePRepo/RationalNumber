@@ -37,6 +37,13 @@ the changes listed in [UPGRADE-3.0.md](UPGRADE-3.0.md#changes-211-cannot-warn-ab
 - `sqrt(int $decimals)` requires the number of decimal places (0 to 9). It returns the square root
   rounded to that precision, computed exactly with integers.
 
+### Fixed
+
+- `multiply()` and `divideBy()` threw `IntegerOverflowException` when the cross products did not
+  fit although the result did (`(2^62/3) × (3/2^62)`): they now cancel common factors first and
+  throw only when the result itself does not fit. `add()` and `subtract()` reduce by the common
+  factor of the denominators (Knuth), e.g. `1/2^62 + 1/2^62` = `1/2^61`.
+
 ## [2.11.0] - 2026-11-11
 
 The last 2.x release before 3.0. It is backward compatible, and it deprecates (with an

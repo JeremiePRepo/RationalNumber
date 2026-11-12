@@ -147,7 +147,7 @@ try {
     $result = $largeNum->multiply($largeNum);  // Would cause overflow
 } catch (RationalNumberException $e) {
     echo $e->getMessage();
-    // "Integer overflow during numerator multiplication: the result does not fit in a
+    // "Integer overflow during multiplication: the result does not fit in a
     //  64-bit integer."
 }
 ```
@@ -156,11 +156,13 @@ try {
 - Overflow detection applies to `multiply()`, `add()`, `subtract()` operations
 - `pow()` can also trigger overflow, especially with large exponents
 - `sqrt($decimals)` throws when `sqrt(value) × 10^$decimals` exceeds about 4.6 × 10^17
-- Large intermediate values can overflow even if the final result would fit in memory
+- `multiply()` and `divideBy()` cancel common factors first: they throw only when the result
+  itself does not fit (`(2^62/3) × (3/2^62)` is `1`). `add()` and `subtract()` also reduce by the
+  common factor of the denominators; in rare cases an intermediate sum can still overflow when
+  the result would fit
 - Throws `RationalNumber\Exception\IntegerOverflowException` (an `\OverflowException`) before
   the overflow occurs
 - The message names the operation that overflowed
-- Detection happens during cross-multiplication in addition/subtraction
 
 **Exception hierarchy:** every exception thrown by the library implements
 `RationalNumber\Exception\RationalNumberException`:
