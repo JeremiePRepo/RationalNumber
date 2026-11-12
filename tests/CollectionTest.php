@@ -471,4 +471,36 @@ class CollectionTest extends TestCase
         // (15 + 25 + 35) * 2 = 150
         $this->assertEqualsWithDelta(150.0, $result->getFloat(), 1e-12);
     }
+
+    public function testSerializationRoundTrip(): void
+    {
+        $collection = new RationalCollection([new RationalNumber(1, 2), new RationalNumber(-3, 4)]);
+
+        $restored = unserialize(serialize($collection));
+
+        $this->assertInstanceOf(RationalCollection::class, $restored);
+        $this->assertSame(['1/2', '-3/4'], array_map(fn (RationalNumber $n) => $n->toString(), $restored->toArray()));
+    }
+
+    public function testUnserializeRejectsNonRationalElements(): void
+    {
+        // Replace the serialized element list with ["abc"].
+        $payload = preg_replace('/a:1:\{.*\}\}$/s', 'a:1:{i:0;s:3:"abc";}}', serialize(new RationalCollection([new RationalNumber(1, 2)])));
+        $this->assertIsString($payload);
+
+        $this->expectException(InvalidArgumentException::class);
+
+        unserialize($payload);
+    }
+
+    public function testUnserializeReindexesElements(): void
+    {
+        $payload = str_replace('a:1:{i:0;', 'a:1:{i:5;', serialize(new RationalCollection([new RationalNumber(1, 2)])));
+
+        $restored = unserialize($payload);
+
+        $this->assertInstanceOf(RationalCollection::class, $restored);
+        $this->assertSame('1/2', $restored->min()->toString());
+        $this->assertTrue(isset($restored[0]));
+    }
 }

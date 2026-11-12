@@ -25,7 +25,7 @@ the changes listed in [UPGRADE-3.0.md](UPGRADE-3.0.md#changes-211-cannot-warn-ab
 - `IntegerOverflowException` extends `\OverflowException` instead of `\ArithmeticError`.
 - `RationalCollection` is immutable (`final readonly`). `add()` returns a new collection. Array
   writes and `unset()` throw the new `ImmutableCollectionException` (a `\LogicException`), and
-  the constructor rejects elements that are not `RationalNumber` instances.
+  the constructor and `unserialize()` reject elements that are not `RationalNumber` instances.
 - `floor()`, `ceil()`, `round()` and `toPercentage()` use exact integer arithmetic. Results
   above 2^53 are now correct, `round()` throws `IntegerOverflowException` when the result does not
   fit, and `toPercentage()` accepts 0 to 16 decimal places and never prints `-0`.

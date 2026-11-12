@@ -48,15 +48,67 @@ final readonly class RationalCollection implements \Countable, \IteratorAggregat
      */
     public function __construct(array $numbers = [])
     {
+        $this->numbers = self::validated($numbers);
+    }
+
+    /**
+     * Restore an instance from unserialize() with the same checks as the constructor, which
+     * unserialize() bypasses. The serialized format is unchanged.
+     *
+     * @param array<mixed> $data The serialized properties.
+     * @throws InvalidArgumentException if the data does not describe a list of RationalNumber instances.
+     */
+    public function __unserialize(array $data): void
+    {
+        // Native serialization stores private properties under "\0Class\0name".
+        $numbers = $data["\0" . self::class . "\0numbers"] ?? $data['numbers'] ?? null;
+
+        if (!is_array($numbers)) {
+            throw new InvalidArgumentException("Invalid serialized RationalCollection: array of numbers expected.");
+        }
+
+        $this->numbers = self::validated($numbers);
+    }
+
+    /**
+     * @param array<mixed> $numbers
+     * @return list<RationalNumber>
+     * @throws InvalidArgumentException if any element is not a RationalNumber instance.
+     */
+    private static function validated(array $numbers): array
+    {
         foreach ($numbers as $number) {
             if (!$number instanceof RationalNumber) {
                 throw new InvalidArgumentException("Value must be a RationalNumber instance.");
             }
         }
 
-        /** @var list<RationalNumber> $list */
-        $list = array_values($numbers);
-        $this->numbers = $list;
+        /** @var list<RationalNumber> */
+        return array_values($numbers);
+    }
+
+    /**
+     * A collection of elements already known to be valid, without checking them again: add() would
+     * otherwise re-check the whole collection at each call.
+     *
+     * @param list<RationalNumber> $numbers
+     */
+    private static function fromList(array $numbers): self
+    {
+        $collection = (new \ReflectionClass(self::class))->newInstanceWithoutConstructor();
+        $collection->initialize($numbers);
+
+        return $collection;
+    }
+
+    /**
+     * Second constructor for fromList() (declared in phpstan.neon as an additional constructor).
+     *
+     * @param list<RationalNumber> $numbers
+     */
+    private function initialize(array $numbers): void
+    {
+        $this->numbers = $numbers;
     }
 
     /**
@@ -67,7 +119,7 @@ final readonly class RationalCollection implements \Countable, \IteratorAggregat
      */
     public function add(RationalNumber $number): self
     {
-        return new self([...$this->numbers, $number]);
+        return self::fromList([...$this->numbers, $number]);
     }
     /**
      * Get a RationalNumber at a specific index.
@@ -132,9 +184,9 @@ final readonly class RationalCollection implements \Countable, \IteratorAggregat
         }
 
         $min = $this->numbers[0];
-        foreach ($this->numbers as $n) {
-            if ($n->isLessThan($min)) {
-                $min = $n;
+        for ($i = 1, $count = count($this->numbers); $i < $count; $i++) {
+            if ($this->numbers[$i]->isLessThan($min)) {
+                $min = $this->numbers[$i];
             }
         }
 
@@ -154,9 +206,9 @@ final readonly class RationalCollection implements \Countable, \IteratorAggregat
         }
 
         $max = $this->numbers[0];
-        foreach ($this->numbers as $n) {
-            if ($n->isGreaterThan($max)) {
-                $max = $n;
+        for ($i = 1, $count = count($this->numbers); $i < $count; $i++) {
+            if ($this->numbers[$i]->isGreaterThan($max)) {
+                $max = $this->numbers[$i];
             }
         }
 
@@ -183,8 +235,7 @@ final readonly class RationalCollection implements \Countable, \IteratorAggregat
      */
     public function filter(callable $callback): self
     {
-        // The constructor reindexes the filtered elements.
-        return new self(array_filter($this->numbers, $callback));
+        return self::fromList(array_values(array_filter($this->numbers, $callback)));
     }
 
     /**
