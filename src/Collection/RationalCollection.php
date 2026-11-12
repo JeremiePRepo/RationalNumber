@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace RationalNumber\Collection;
 
+use ArrayAccess;
+use ArrayIterator;
+use Countable;
+use IteratorAggregate;
 use RationalNumber\Exception\EmptyCollectionException;
 use RationalNumber\Exception\ImmutableCollectionException;
 use RationalNumber\Exception\InvalidArgumentException;
@@ -30,10 +34,10 @@ use RationalNumber\RationalNumber;
  * Collections are immutable: add(), map() and filter() return a new collection, and array access
  * is read-only.
  *
- * @implements \IteratorAggregate<int, RationalNumber>
- * @implements \ArrayAccess<int, RationalNumber>
+ * @implements IteratorAggregate<int, RationalNumber>
+ * @implements ArrayAccess<int, RationalNumber>
  */
-final readonly class RationalCollection implements \Countable, \IteratorAggregate, \ArrayAccess
+final readonly class RationalCollection implements Countable, IteratorAggregate, ArrayAccess
 {
     /**
      * @var list<RationalNumber> Elements, indexed from 0 to count() - 1.
@@ -102,7 +106,7 @@ final readonly class RationalCollection implements \Countable, \IteratorAggregat
     public function get(int $index): RationalNumber
     {
         if (!isset($this->numbers[$index])) {
-            throw new InvalidArgumentException("Index {$index} is out of bounds.");
+            throw new InvalidArgumentException("Index $index is out of bounds.");
         }
 
         return $this->numbers[$index];
@@ -248,11 +252,11 @@ final readonly class RationalCollection implements \Countable, \IteratorAggregat
      *
      * Allows foreach iteration over the collection.
      *
-     * @return \ArrayIterator<int, RationalNumber> Iterator for the RationalNumber instances.
+     * @return ArrayIterator<int, RationalNumber> Iterator for the RationalNumber instances.
      */
-    public function getIterator(): \ArrayIterator
+    public function getIterator(): ArrayIterator
     {
-        return new \ArrayIterator($this->numbers);
+        return new ArrayIterator($this->numbers);
     }
 
     // ========== ArrayAccess Interface (read-only) ==========

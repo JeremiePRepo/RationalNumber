@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace RationalNumber\Internal;
 
+use LogicException;
 use RationalNumber\Exception\IntegerOverflowException;
 
 /**
@@ -18,17 +19,17 @@ final class DecimalParser
     /**
      * Decimal digits of PHP_INT_MAX, used for exact overflow checks on digit strings.
      */
-    private const INT_MAX_DIGITS = PHP_INT_MAX . '';
+    private const string INT_MAX_DIGITS = PHP_INT_MAX . '';
 
     /**
      * Largest power of ten that fits in a 64-bit integer (10^18).
      */
-    private const MAX_POWER_OF_TEN = 18;
+    private const int MAX_POWER_OF_TEN = 18;
 
     /**
      * Floats below 2^53 in absolute value that have no fractional part are exact integers.
      */
-    private const MAX_EXACT_FLOAT_INTEGER = 9007199254740992.0;
+    private const float MAX_EXACT_FLOAT_INTEGER = 9007199254740992.0;
 
     /**
      * Parse a decimal string (e.g. "-12.50", ".5", "1.5e-3", "1.0E+25") exactly.
@@ -61,7 +62,7 @@ final class DecimalParser
         }
 
         [$sign, $digits, $exponent] = self::split(self::shortestRepresentation($value))
-            ?? throw new \LogicException("Unexpected float representation for {$value}.");
+            ?? throw new LogicException("Unexpected float representation for $value.");
         [$digits, $exponent] = self::roundToFit($digits, $exponent);
 
         return self::toFraction($sign, $digits, $exponent);

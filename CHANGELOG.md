@@ -3,6 +3,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.1] - Unreleased
+
+### Changed
+
+- `RationalNumber::fromFloat()` declares its parameter type natively (`float|int`) instead of in
+  its docblock only. Values it already accepted are unaffected.
+- Internal: typed class constants (PHP 8.3+) and imported global classes.
+
 ## [3.0.0] - 2026-11-12
 
 A smaller and fully exact API. Code that runs without deprecation warnings on 2.11 needs only

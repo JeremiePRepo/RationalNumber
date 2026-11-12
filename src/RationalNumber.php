@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace RationalNumber;
 
+use JsonSerializable;
 use RationalNumber\Exception\DivisionByZeroException;
 use RationalNumber\Exception\IntegerOverflowException;
 use RationalNumber\Exception\InvalidArgumentException;
@@ -14,31 +15,31 @@ use RationalNumber\Internal\DecimalParser;
  *
  * Implements JsonSerializable for seamless JSON encoding/decoding support.
  */
-final readonly class RationalNumber implements \JsonSerializable
+final readonly class RationalNumber implements JsonSerializable
 {
     /**
      * floor(sqrt(PHP_INT_MAX)): the product of two integers up to this value (in absolute value) fits in an int.
      */
-    private const SQRT_INT_MAX = 3037000499;
+    private const int SQRT_INT_MAX = 3037000499;
 
     /**
      * Largest number of decimal places for toPercentage(): 100 * 10^16 still fits in an int.
      */
-    private const MAX_PERCENTAGE_DECIMALS = 16;
+    private const int MAX_PERCENTAGE_DECIMALS = 16;
 
     /**
      * Largest number of decimal places for sqrt(): 10^(2 * 9) still fits in an int.
      */
-    private const MAX_SQRT_DECIMALS = 9;
+    private const int MAX_SQRT_DECIMALS = 9;
 
     /**
      * Largest root before a sqrt() digit step: then 100 * rest + 99 (rest <= 2 * root) and
      * 10 * root + 9 fit in an int.
      */
-    private const MAX_SQRT_STEP_ROOT = 46116860184273878; // intdiv(PHP_INT_MAX, 200) - 1
+    private const int MAX_SQRT_STEP_ROOT = 46116860184273878; // intdiv(PHP_INT_MAX, 200) - 1
 
     /** intdiv(PHP_INT_MAX, 100): the largest value that can be multiplied by 100. */
-    private const MAX_INT_DIV_100 = 92233720368547758;
+    private const int MAX_INT_DIV_100 = 92233720368547758;
 
     private int $numerator;
     private int $denominator;
@@ -114,7 +115,7 @@ final readonly class RationalNumber implements \JsonSerializable
      * @throws InvalidArgumentException if the value is INF or NAN.
      * @throws IntegerOverflowException if the value is too large, or too small to be represented without becoming zero.
      */
-    public static function fromFloat($value): RationalNumber
+    public static function fromFloat(float|int $value): RationalNumber
     {
         // Handle integer input directly
         if (is_int($value)) {
@@ -157,13 +158,13 @@ final readonly class RationalNumber implements \JsonSerializable
             // Validate for integer overflow before converting to int (exact check on the digits)
             if (!DecimalParser::fitsInInt(ltrim($numeratorStr, '+-0'))) {
                 throw new IntegerOverflowException(
-                    "Integer overflow in fraction string '{$input}'. Numerator exceeds PHP_INT_MAX."
+                    "Integer overflow in fraction string '$input'. Numerator exceeds PHP_INT_MAX."
                 );
             }
 
             if (!DecimalParser::fitsInInt(ltrim($denominatorStr, '+-0'))) {
                 throw new IntegerOverflowException(
-                    "Integer overflow in fraction string '{$input}'. Denominator exceeds PHP_INT_MAX."
+                    "Integer overflow in fraction string '$input'. Denominator exceeds PHP_INT_MAX."
                 );
             }
 
@@ -183,7 +184,7 @@ final readonly class RationalNumber implements \JsonSerializable
 
         // Invalid format
         throw new InvalidArgumentException(
-            "Invalid string format: '{$input}'. Expected formats: '3/4', '0.25', '5', or scientific notation."
+            "Invalid string format: '$input'. Expected formats: '3/4', '0.25', '5', or scientific notation."
         );
     }
 
@@ -461,7 +462,7 @@ final readonly class RationalNumber implements \JsonSerializable
         $d = $other->denominator;
 
         // a/b vs c/d => a*d vs c*b. Common case: every term is below sqrt(PHP_INT_MAX), so both
-        // products fit (no function call on this hot path). Otherwise check them, or compare exactly.
+        // products fit (no function call on this hot path). Otherwise, check them, or compare exactly.
         if (
             ($b <= self::SQRT_INT_MAX && $d <= self::SQRT_INT_MAX
                 && $a <= self::SQRT_INT_MAX && $a >= -self::SQRT_INT_MAX
@@ -1016,7 +1017,7 @@ final readonly class RationalNumber implements \JsonSerializable
     private static function checkDecimalPlaces(int $decimals, int $max): void
     {
         if ($decimals < 0 || $decimals > $max) {
-            throw new InvalidArgumentException("Decimal places must be between 0 and {$max}.");
+            throw new InvalidArgumentException("Decimal places must be between 0 and $max.");
         }
     }
 }

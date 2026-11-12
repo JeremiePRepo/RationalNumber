@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace RationalNumber\Exception;
 
+use Throwable;
+
 /**
  * Marker interface implemented by every exception the library throws.
  *
@@ -16,6 +18,6 @@ namespace RationalNumber\Exception;
  * }
  * </code>
  */
-interface RationalNumberException extends \Throwable
+interface RationalNumberException extends Throwable
 {
 }
