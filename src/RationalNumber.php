@@ -58,7 +58,7 @@ final readonly class RationalNumber implements \JsonSerializable
 
         // -PHP_INT_MIN does not fit in an int, so normalization (sign, GCD) could not be exact.
         if ($numerator === PHP_INT_MIN || $denominator === PHP_INT_MIN) {
-            throw IntegerOverflowException::create(
+            throw new IntegerOverflowException(
                 "Integer overflow: PHP_INT_MIN cannot be used as a numerator or a denominator "
                 . "because its opposite does not fit in an integer."
             );
@@ -156,13 +156,13 @@ final readonly class RationalNumber implements \JsonSerializable
 
             // Validate for integer overflow before converting to int (exact check on the digits)
             if (!DecimalParser::fitsInInt(ltrim($numeratorStr, '+-0'))) {
-                throw IntegerOverflowException::create(
+                throw new IntegerOverflowException(
                     "Integer overflow in fraction string '{$input}'. Numerator exceeds PHP_INT_MAX."
                 );
             }
 
             if (!DecimalParser::fitsInInt(ltrim($denominatorStr, '+-0'))) {
-                throw IntegerOverflowException::create(
+                throw new IntegerOverflowException(
                     "Integer overflow in fraction string '{$input}'. Denominator exceeds PHP_INT_MAX."
                 );
             }
@@ -232,7 +232,7 @@ final readonly class RationalNumber implements \JsonSerializable
         $left = $this->numerator * $otherDenominator;
         $right = $otherNumerator * $this->denominator;
         if ($right > 0 ? $left > PHP_INT_MAX - $right : $left < -PHP_INT_MAX - $right) {
-            throw IntegerOverflowException::create("Operation would cause integer overflow during addition.");
+            throw IntegerOverflowException::during('addition');
         }
 
         $newNumerator = $left + $right;
@@ -259,7 +259,7 @@ final readonly class RationalNumber implements \JsonSerializable
         $left = $this->numerator * $otherDenominator;
         $right = $otherNumerator * $this->denominator;
         if ($right > 0 ? $left < -PHP_INT_MAX + $right : $left > PHP_INT_MAX + $right) {
-            throw IntegerOverflowException::create("Operation would cause integer overflow during subtraction.");
+            throw IntegerOverflowException::during('subtraction');
         }
 
         $newNumerator = $left - $right;
@@ -728,7 +728,7 @@ final readonly class RationalNumber implements \JsonSerializable
 
         for ($i = 0; $i < $decimals; $i++) {
             if ($root > self::MAX_SQRT_STEP_ROOT) {
-                throw IntegerOverflowException::create("Operation would cause integer overflow during square root.");
+                throw IntegerOverflowException::during('square root');
             }
 
             // The next two decimal digits of x: floor(r * 100 / den), and the new remainder.
@@ -992,9 +992,7 @@ final readonly class RationalNumber implements \JsonSerializable
     private static function checkMultiplicationOverflow(int $a, int $b, string $operation): void
     {
         if (!self::productFits($a, $b)) {
-            throw IntegerOverflowException::create(
-                sprintf("Operation would cause integer overflow during %s.", $operation)
-            );
+            throw IntegerOverflowException::during($operation);
         }
     }
 
@@ -1006,9 +1004,7 @@ final readonly class RationalNumber implements \JsonSerializable
     private static function checkAdditionOverflow(int $a, int $b, string $operation): void
     {
         if ($a > PHP_INT_MAX - $b) {
-            throw IntegerOverflowException::create(
-                sprintf("Operation would cause integer overflow during %s.", $operation)
-            );
+            throw IntegerOverflowException::during($operation);
         }
     }
 

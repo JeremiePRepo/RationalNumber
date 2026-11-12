@@ -135,7 +135,8 @@ echo $unitsNeeded->toString();  // "9/1" (need 9 units for 100 items)
 
 ## Overflow Protection
 
-The library automatically detects integer overflow in arithmetic operations and throws an `IntegerOverflowException` with helpful guidance:
+The library works with 64-bit integers only. It detects every integer overflow before it happens
+and throws an `IntegerOverflowException` instead of silently switching to floats:
 
 ```php
 use RationalNumber\Exception\RationalNumberException;
@@ -146,8 +147,8 @@ try {
     $result = $largeNum->multiply($largeNum);  // Would cause overflow
 } catch (RationalNumberException $e) {
     echo $e->getMessage();
-    // "Operation would cause integer overflow during numerator multiplication.
-    //  Consider using the GMP extension for arbitrary precision arithmetic."
+    // "Integer overflow during numerator multiplication: the result does not fit in a
+    //  64-bit integer."
 }
 ```
 
@@ -158,7 +159,7 @@ try {
 - Large intermediate values can overflow even if the final result would fit in memory
 - Throws `RationalNumber\Exception\IntegerOverflowException` (an `\OverflowException`) before
   the overflow occurs
-- Error messages suggest installing/using GMP extension for larger numbers
+- The message names the operation that overflowed
 - Detection happens during cross-multiplication in addition/subtraction
 
 **Exception hierarchy:** every exception thrown by the library implements
@@ -172,20 +173,10 @@ try {
 | `IntegerOverflowException` | `\OverflowException` | any value that does not fit in a 64-bit integer (`\ArithmeticError` in 2.x) |
 | `ImmutableCollectionException` | `\LogicException` | writing to a `RationalCollection` through array access (`[]=`, `unset()`) |
 
-**For very large numbers**, consider installing the GMP extension:
-
-```bash
-# Ubuntu/Debian
-sudo apt-get install php-gmp
-
-# macOS (with Homebrew)
-brew install gmp
-
-# Windows
-# Enable extension=gmp in php.ini
-```
-
-Note: The library currently detects overflow but doesn't automatically use GMP. This ensures predictable behavior and lets you choose when to use arbitrary precision arithmetic.
+**For numbers beyond 64 bits**, this library is not the right tool: it does not use GMP or
+BCMath, even when they are installed. Use an arbitrary precision library such as
+[brick/math](https://github.com/brick/math) (`BigRational`) instead; see the
+[library comparison](comparison.md).
 
 ## Additional Operations
 

@@ -13,12 +13,10 @@ namespace RationalNumber\Exception;
 class IntegerOverflowException extends \OverflowException implements RationalNumberException
 {
     /**
-     * Create the exception with a hint about the GMP extension appended to the message.
+     * An overflow during the given operation, e.g. during('multiplication').
      */
-    public static function create(string $message): self
+    public static function during(string $operation): self
     {
-        return new self($message . ' ' . (extension_loaded('gmp')
-            ? "Consider using the GMP extension for arbitrary precision arithmetic."
-            : "Consider installing the GMP extension for handling larger numbers."));
+        return new self("Integer overflow during {$operation}: the result does not fit in a 64-bit integer.");
     }
 }

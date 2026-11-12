@@ -57,7 +57,7 @@ Perfect for financial calculations, scientific computing, and anywhere precision
 ### Infrastructure
 - JSON serialization
 - Collections for batch processing
-- Overflow detection with GMP suggestions
+- Exact overflow detection (64-bit integers, no silent float conversion)
 - 371 tests, 760 assertions
 
 ## Requirements

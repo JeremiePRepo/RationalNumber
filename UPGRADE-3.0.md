@@ -70,6 +70,11 @@ try { $a->multiply($b); } catch (RationalNumberException $e) {}    // 2.11 and 3
 
 The other exceptions keep extending `\InvalidArgumentException`.
 
+Overflow messages changed too: they no longer suggest installing GMP (the library never uses it)
+and read `Integer overflow during <operation>: the result does not fit in a 64-bit integer.` The
+`IntegerOverflowException::create()` factory is replaced by `IntegerOverflowException::during()`.
+Code that matches the message text must be updated: prefer catching the exception class.
+
 ### Immutable collections
 
 In 3.0, `RationalCollection::add()` returns a new collection and leaves the original unchanged.

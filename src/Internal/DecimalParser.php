@@ -156,7 +156,7 @@ final class DecimalParser
             if (strlen($digits) + $exponent > strlen(self::INT_MAX_DIGITS)
                 || !self::fitsInInt($integerDigits = $digits . str_repeat('0', $exponent))
             ) {
-                throw IntegerOverflowException::create(
+                throw new IntegerOverflowException(
                     "Integer overflow: the value is too large for integer representation."
                 );
             }
@@ -165,7 +165,7 @@ final class DecimalParser
         }
 
         if (-$exponent > self::MAX_POWER_OF_TEN || !self::fitsInInt($digits)) {
-            throw IntegerOverflowException::create(
+            throw new IntegerOverflowException(
                 "Integer overflow: the value has too many digits to be represented exactly."
             );
         }
@@ -190,7 +190,7 @@ final class DecimalParser
         $dropped = max(-$exponent, strlen($digits)) - self::MAX_POWER_OF_TEN;
         $rounded = (int) substr($digits, 0, -$dropped) + (($digits[-$dropped] ?? '0') >= '5' ? 1 : 0);
         if ($rounded === 0) {
-            throw IntegerOverflowException::create(
+            throw new IntegerOverflowException(
                 "Integer overflow: the value is too small to be represented without becoming zero."
             );
         }

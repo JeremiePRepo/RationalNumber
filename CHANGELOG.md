@@ -22,7 +22,9 @@ the changes listed in [UPGRADE-3.0.md](UPGRADE-3.0.md#changes-211-cannot-warn-ab
 ### Changed
 
 - **PHP 8.4** or later is required.
-- `IntegerOverflowException` extends `\OverflowException` instead of `\ArithmeticError`.
+- `IntegerOverflowException` extends `\OverflowException` instead of `\ArithmeticError`. Its
+  messages name the operation and the 64-bit limit instead of suggesting GMP, which the library
+  never uses; `IntegerOverflowException::create()` is replaced by `during()`.
 - `RationalCollection` is immutable (`final readonly`). `add()` returns a new collection. Array
   writes and `unset()` throw the new `ImmutableCollectionException` (a `\LogicException`), and
   `unserialize()` rejects elements that are not `RationalNumber` instances.

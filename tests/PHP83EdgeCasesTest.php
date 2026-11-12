@@ -418,7 +418,7 @@ class PHP83EdgeCasesTest extends TestCase
     public function testAdditionSumOverflowDetection(): void
     {
         $this->expectException(\OverflowException::class);
-        $this->expectExceptionMessage('Operation would cause integer overflow during addition.');
+        $this->expectExceptionMessage('Integer overflow during addition: the result does not fit in a 64-bit integer.');
 
         (new RationalNumber(PHP_INT_MAX))->add(new RationalNumber(1));
     }
@@ -426,7 +426,7 @@ class PHP83EdgeCasesTest extends TestCase
     public function testSubtractionSumOverflowDetection(): void
     {
         $this->expectException(\OverflowException::class);
-        $this->expectExceptionMessage('Operation would cause integer overflow during subtraction.');
+        $this->expectExceptionMessage('Integer overflow during subtraction: the result does not fit in a 64-bit integer.');
 
         (new RationalNumber(-PHP_INT_MAX))->subtract(new RationalNumber(2));
     }
@@ -598,9 +598,9 @@ class PHP83EdgeCasesTest extends TestCase
     }
 
     /**
-     * Test that overflow error messages mention GMP when available
+     * Overflow messages say what does not fit (no hint about extensions the library does not use).
      */
-    public function testOverflowErrorMessageIncludesGMPHint(): void
+    public function testOverflowErrorMessageExplainsTheLimit(): void
     {
         try {
             $largeNum = new RationalNumber(PHP_INT_MAX, 2);
@@ -608,8 +608,8 @@ class PHP83EdgeCasesTest extends TestCase
             $this->fail('Expected OverflowException was not thrown');
         } catch (\OverflowException $e) {
             $message = $e->getMessage();
-            $this->assertStringContainsStringIgnoringCase('overflow', $message);
-            $this->assertStringContainsStringIgnoringCase('gmp', $message);
+            $this->assertStringContainsString('does not fit in a 64-bit integer', $message);
+            $this->assertStringNotContainsStringIgnoringCase('gmp', $message);
         }
     }
 }

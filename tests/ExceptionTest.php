@@ -112,7 +112,7 @@ class ExceptionTest extends TestCase
             $this->assertInstanceOf(RationalNumberException::class, $e);
             $this->assertInstanceOf($legacyClass, $e);
             if ($e instanceof IntegerOverflowException) {
-                $this->assertStringContainsString('GMP extension', $e->getMessage());
+                $this->assertStringNotContainsStringIgnoringCase('GMP', $e->getMessage());
             }
 
             return;
@@ -121,12 +121,14 @@ class ExceptionTest extends TestCase
         $this->fail("Expected {$expectedClass} to be thrown.");
     }
 
-    public function testOverflowMessageMentionsGmp(): void
+    public function testOverflowMessageNamesTheOperation(): void
     {
-        $exception = IntegerOverflowException::create('Overflow.');
+        $exception = IntegerOverflowException::during('multiplication');
 
-        $this->assertStringStartsWith('Overflow. ', $exception->getMessage());
-        $this->assertStringContainsString('GMP extension', $exception->getMessage());
+        $this->assertSame(
+            'Integer overflow during multiplication: the result does not fit in a 64-bit integer.',
+            $exception->getMessage()
+        );
     }
 
     public function testCatchingTheMarkerInterface(): void
