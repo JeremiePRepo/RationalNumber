@@ -18,16 +18,27 @@ use RationalNumber\RationalNumber;
 use RationalNumber\Collection\RationalCollection;
 
 // Create a collection
-$grades = new RationalCollection([
+$grades = new RationalCollection(
     RationalNumber::fromFloat(15.5),
     RationalNumber::fromFloat(17),
     RationalNumber::fromFloat(14.25),
     RationalNumber::fromFloat(16)
-]);
+);
 
 // Create empty collection
 $collection = new RationalCollection();
+
+// From an array: unpack it
+$collection = new RationalCollection(...$numbers);
 ```
+
+The constructor takes the elements as arguments (since 3.0), and PHP checks their type: anything
+other than a `RationalNumber` throws a `\TypeError`. Keys of an unpacked array are ignored, but PHP
+cannot unpack an array that mixes string keys followed by integer keys: use
+`new RationalCollection(...array_values($array))` for such arrays.
+
+To build a collection from many values, collect them in an array and unpack it once: each `add()`
+copies the whole collection, so a loop of `add()` calls is quadratic.
 
 ## Aggregate Operations
 
@@ -62,11 +73,11 @@ echo $total->getFloat();  // 62.75
 use RationalNumber\RationalNumber;
 use RationalNumber\Collection\RationalCollection;
 
-$prices = new RationalCollection([
+$prices = new RationalCollection(
     RationalNumber::fromFloat(100),
     RationalNumber::fromFloat(50),
     RationalNumber::fromFloat(75)
-]);
+);
 
 $withTax = $prices->map(fn($p) => $p->increaseByPercentage('20%'));
 $totalWithTax = $withTax->sum();
@@ -81,12 +92,12 @@ echo $totalWithTax->getFloat();  // 270 (120 + 60 + 90)
 use RationalNumber\RationalNumber;
 use RationalNumber\Collection\RationalCollection;
 
-$allPrices = new RationalCollection([
+$allPrices = new RationalCollection(
     RationalNumber::fromFloat(5),
     RationalNumber::fromFloat(15),
     RationalNumber::fromFloat(3),
     RationalNumber::fromFloat(20)
-]);
+);
 
 $expensive = $allPrices->filter(
     fn($p) => $p->isGreaterThan(RationalNumber::fromFloat(10))
@@ -102,10 +113,10 @@ echo $expensive->count();  // 2
 use RationalNumber\RationalNumber;
 use RationalNumber\Collection\RationalCollection;
 
-$collection = new RationalCollection([
+$collection = new RationalCollection(
     RationalNumber::fromFloat(1),
     RationalNumber::fromFloat(2),
-]);
+);
 echo $collection[0]->getFloat();  // 1.0
 echo isset($collection[5]) ? 'yes' : 'no';  // "no"
 ```
@@ -165,13 +176,13 @@ $result = $collection
 use RationalNumber\RationalNumber;
 use RationalNumber\Collection\RationalCollection;
 
-$grades = new RationalCollection([
+$grades = new RationalCollection(
     RationalNumber::fromFloat(15.5),
     RationalNumber::fromFloat(17),
     RationalNumber::fromFloat(14.25),
     RationalNumber::fromFloat(16),
     RationalNumber::fromFloat(12)
-]);
+);
 
 // Find students above average
 $average = $grades->average();
@@ -189,11 +200,11 @@ echo "Above average: " . $aboveAverage->count() . " students\n";
 use RationalNumber\RationalNumber;
 use RationalNumber\Collection\RationalCollection;
 
-$cartItems = new RationalCollection([
+$cartItems = new RationalCollection(
     RationalNumber::fromFloat(29.99),
     RationalNumber::fromFloat(15.50),
     RationalNumber::fromFloat(42.00)
-]);
+);
 
 $subtotal = $cartItems->sum();
 $withTax = $subtotal->increaseByPercentage('20%');

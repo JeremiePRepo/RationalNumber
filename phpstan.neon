@@ -3,7 +3,5 @@ parameters:
     paths:
         - src
         - tests/Benchmarks
-    additionalConstructors:
-        - RationalNumber\Collection\RationalCollection::initialize
 
 # You can generate a baseline with: composer phpstan-baseline

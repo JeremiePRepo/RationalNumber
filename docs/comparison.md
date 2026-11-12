@@ -293,11 +293,11 @@ $rounded = $total->round(100);                 // 119.99 (cents)
 ```php
 use RationalNumber\Collection\RationalCollection;
 
-$grades = new RationalCollection([
+$grades = new RationalCollection(
     new RationalNumber(17, 20),  // 17/20
     new RationalNumber(14, 20),  // 14/20
     new RationalNumber(16, 20),  // 16/20
-]);
+);
 
 $average = $grades->average();  // Exactly 47/60
 echo $average->toPercentage(); // "78.333%"

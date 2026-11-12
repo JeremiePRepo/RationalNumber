@@ -25,7 +25,7 @@ visible, and fix each one using the table below. Code that runs without deprecat
 | `$n->reduce()` | remove the call: numbers are always in their simplest form |
 | `$divisor->divideFrom($dividend)` | `$dividend->divideBy($divisor)` |
 | `$collection->clear()` | `new RationalCollection()` |
-| `$collection[] = $n`, `$collection[$i] = $n` | `$collection = $collection->add($n)` or `new RationalCollection([...])` |
+| `$collection[] = $n`, `$collection[$i] = $n` | `$collection = $collection->add($n)` or `new RationalCollection(...)` |
 | `unset($collection[$i])` | `$collection = $collection->filter(...)` |
 
 ```php
@@ -86,6 +86,20 @@ whose result is not assigned.
 Writes through array access (`$collection[] = $n`, `$collection[$i] = $n`, `unset($collection[$i])`)
 throw a `RationalNumber\Exception\ImmutableCollectionException`, which extends `\LogicException`.
 They were deprecated in 2.11.
+
+### Collection constructor
+
+`RationalCollection` takes its elements as arguments instead of an array. Unpack existing arrays:
+
+```php
+$c = new RationalCollection([$a, $b]);         // 2.x
+$c = new RationalCollection($a, $b);           // 3.0
+$c = new RationalCollection(...$numbers);      // 3.0, from an array
+```
+
+An element that is not a `RationalNumber` (in the constructor or returned by a `map()` callback)
+throws a native `\TypeError` instead of an `InvalidArgumentException`. An array that mixes string
+keys followed by integer keys cannot be unpacked: use `...array_values($numbers)`.
 
 ### `sqrt()` signature
 

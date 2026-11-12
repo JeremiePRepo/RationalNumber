@@ -19,11 +19,11 @@ use RationalNumber\RationalNumber;
  *
  * Example:
  * <code>
- * $grades = new RationalCollection([
+ * $grades = new RationalCollection(
  *     RationalNumber::fromFloat(15.5),
  *     RationalNumber::fromFloat(17),
  *     RationalNumber::fromFloat(14.25)
- * ]);
+ * );
  * $average = $grades->average();
  * </code>
  *
@@ -43,12 +43,15 @@ final readonly class RationalCollection implements \Countable, \IteratorAggregat
     /**
      * Constructor for RationalCollection.
      *
-     * @param array<mixed> $numbers RationalNumber instances (keys are ignored).
-     * @throws InvalidArgumentException if any element is not a RationalNumber instance.
+     * From an array, unpack it: new RationalCollection(...$numbers) (keys are ignored).
+     *
+     * @param RationalNumber ...$numbers The elements (the engine checks their type: \TypeError otherwise).
      */
-    public function __construct(array $numbers = [])
+    public function __construct(RationalNumber ...$numbers)
     {
-        $this->numbers = self::validated($numbers);
+        // Unpacking an array with string keys passes them as named arguments, which the variadic
+        // parameter keeps: reindex.
+        $this->numbers = array_values($numbers);
     }
 
     /**
@@ -67,48 +70,15 @@ final readonly class RationalCollection implements \Countable, \IteratorAggregat
             throw new InvalidArgumentException("Invalid serialized RationalCollection: array of numbers expected.");
         }
 
-        $this->numbers = self::validated($numbers);
-    }
-
-    /**
-     * @param array<mixed> $numbers
-     * @return list<RationalNumber>
-     * @throws InvalidArgumentException if any element is not a RationalNumber instance.
-     */
-    private static function validated(array $numbers): array
-    {
+        $list = [];
         foreach ($numbers as $number) {
             if (!$number instanceof RationalNumber) {
-                throw new InvalidArgumentException("Value must be a RationalNumber instance.");
+                throw new InvalidArgumentException("Invalid serialized RationalCollection: RationalNumber elements expected.");
             }
+            $list[] = $number;
         }
 
-        /** @var list<RationalNumber> */
-        return array_values($numbers);
-    }
-
-    /**
-     * A collection of elements already known to be valid, without checking them again: add() would
-     * otherwise re-check the whole collection at each call.
-     *
-     * @param list<RationalNumber> $numbers
-     */
-    private static function fromList(array $numbers): self
-    {
-        $collection = (new \ReflectionClass(self::class))->newInstanceWithoutConstructor();
-        $collection->initialize($numbers);
-
-        return $collection;
-    }
-
-    /**
-     * Second constructor for fromList() (declared in phpstan.neon as an additional constructor).
-     *
-     * @param list<RationalNumber> $numbers
-     */
-    private function initialize(array $numbers): void
-    {
-        $this->numbers = $numbers;
+        $this->numbers = $list;
     }
 
     /**
@@ -119,7 +89,7 @@ final readonly class RationalCollection implements \Countable, \IteratorAggregat
      */
     public function add(RationalNumber $number): self
     {
-        return self::fromList([...$this->numbers, $number]);
+        return new self(...$this->numbers, ...[$number]);
     }
 
     /**
@@ -225,7 +195,7 @@ final readonly class RationalCollection implements \Countable, \IteratorAggregat
      */
     public function map(callable $callback): self
     {
-        return new self(array_map($callback, $this->numbers));
+        return new self(...array_map($callback, $this->numbers));
     }
 
     /**
@@ -236,7 +206,7 @@ final readonly class RationalCollection implements \Countable, \IteratorAggregat
      */
     public function filter(callable $callback): self
     {
-        return self::fromList(array_values(array_filter($this->numbers, $callback)));
+        return new self(...array_filter($this->numbers, $callback));
     }
 
     /**
@@ -318,7 +288,7 @@ final readonly class RationalCollection implements \Countable, \IteratorAggregat
     }
 
     /**
-     * Collections are immutable: use add() or new RationalCollection([...]) instead.
+     * Collections are immutable: use add() or new RationalCollection(...) instead.
      *
      * @throws ImmutableCollectionException always.
      */

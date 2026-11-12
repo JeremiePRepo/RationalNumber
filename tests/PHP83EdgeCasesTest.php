@@ -507,7 +507,7 @@ class PHP83EdgeCasesTest extends TestCase
     {
         $smallest = new RationalNumber(PHP_INT_MAX - 2, 2);
         $largest = new RationalNumber(PHP_INT_MAX, 2);
-        $collection = new RationalCollection([$largest, $smallest]);
+        $collection = new RationalCollection($largest, $smallest);
 
         $this->assertSame($smallest, $collection->min());
         $this->assertSame($largest, $collection->max());

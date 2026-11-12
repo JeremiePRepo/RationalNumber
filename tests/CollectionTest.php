@@ -36,7 +36,7 @@ class CollectionTest extends TestCase
             RationalNumber::fromFloat(3)
         ];
 
-        $collection = new RationalCollection($numbers);
+        $collection = new RationalCollection(...$numbers);
 
         $this->assertCount(3, $collection);
         $this->assertFalse($collection->isEmpty());
@@ -69,11 +69,11 @@ class CollectionTest extends TestCase
 
     public function testGetByIndex(): void
     {
-        $collection = new RationalCollection([
+        $collection = new RationalCollection(
             RationalNumber::fromFloat(1),
             RationalNumber::fromFloat(2),
             RationalNumber::fromFloat(3)
-        ]);
+        );
 
         $number = $collection->get(1);
 
@@ -85,7 +85,7 @@ class CollectionTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Index 5 is out of bounds");
 
-        $collection = new RationalCollection([RationalNumber::fromFloat(1)]);
+        $collection = new RationalCollection(RationalNumber::fromFloat(1));
         $collection->get(5);
     }
 
@@ -93,11 +93,11 @@ class CollectionTest extends TestCase
 
     public function testSumOfNumbers(): void
     {
-        $collection = new RationalCollection([
+        $collection = new RationalCollection(
             RationalNumber::fromFloat(1),
             RationalNumber::fromFloat(2),
             RationalNumber::fromFloat(3)
-        ]);
+        );
 
         $sum = $collection->sum();
 
@@ -114,11 +114,11 @@ class CollectionTest extends TestCase
 
     public function testAverageOfNumbers(): void
     {
-        $collection = new RationalCollection([
+        $collection = new RationalCollection(
             RationalNumber::fromFloat(10),
             RationalNumber::fromFloat(20),
             RationalNumber::fromFloat(30)
-        ]);
+        );
 
         $average = $collection->average();
 
@@ -127,11 +127,11 @@ class CollectionTest extends TestCase
 
     public function testAverageWithFractions(): void
     {
-        $collection = new RationalCollection([
+        $collection = new RationalCollection(
             new RationalNumber(1, 2),  // 0.5
             new RationalNumber(1, 4),  // 0.25
             new RationalNumber(1, 8)   // 0.125
-        ]);
+        );
 
         $average = $collection->average();
 
@@ -150,12 +150,12 @@ class CollectionTest extends TestCase
 
     public function testMinOfNumbers(): void
     {
-        $collection = new RationalCollection([
+        $collection = new RationalCollection(
             RationalNumber::fromFloat(15),
             RationalNumber::fromFloat(8),
             RationalNumber::fromFloat(23),
             RationalNumber::fromFloat(4)
-        ]);
+        );
 
         $min = $collection->min();
 
@@ -173,12 +173,12 @@ class CollectionTest extends TestCase
 
     public function testMaxOfNumbers(): void
     {
-        $collection = new RationalCollection([
+        $collection = new RationalCollection(
             RationalNumber::fromFloat(15),
             RationalNumber::fromFloat(8),
             RationalNumber::fromFloat(23),
             RationalNumber::fromFloat(4)
-        ]);
+        );
 
         $max = $collection->max();
 
@@ -198,11 +198,11 @@ class CollectionTest extends TestCase
 
     public function testMapOperation(): void
     {
-        $collection = new RationalCollection([
+        $collection = new RationalCollection(
             RationalNumber::fromFloat(1),
             RationalNumber::fromFloat(2),
             RationalNumber::fromFloat(3)
-        ]);
+        );
 
         $doubled = $collection->map(fn ($n) => $n->multiply(RationalNumber::fromFloat(2)));
 
@@ -214,11 +214,11 @@ class CollectionTest extends TestCase
 
     public function testMapWithPercentageIncrease(): void
     {
-        $prices = new RationalCollection([
+        $prices = new RationalCollection(
             RationalNumber::fromFloat(100),
             RationalNumber::fromFloat(200),
             RationalNumber::fromFloat(300)
-        ]);
+        );
 
         $withTax = $prices->map(fn ($p) => $p->increaseByPercentage('20%'));
 
@@ -229,12 +229,12 @@ class CollectionTest extends TestCase
 
     public function testFilterOperation(): void
     {
-        $collection = new RationalCollection([
+        $collection = new RationalCollection(
             RationalNumber::fromFloat(5),
             RationalNumber::fromFloat(15),
             RationalNumber::fromFloat(3),
             RationalNumber::fromFloat(20)
-        ]);
+        );
 
         $greaterThan10 = $collection->filter(fn ($n) => $n->isGreaterThan(RationalNumber::fromFloat(10)));
 
@@ -243,12 +243,12 @@ class CollectionTest extends TestCase
 
     public function testFilterPositiveNumbers(): void
     {
-        $collection = new RationalCollection([
+        $collection = new RationalCollection(
             RationalNumber::fromFloat(-5),
             RationalNumber::fromFloat(10),
             RationalNumber::fromFloat(-3),
             RationalNumber::fromFloat(7)
-        ]);
+        );
 
         $positives = $collection->filter(fn ($n) => $n->isGreaterThan(RationalNumber::zero()));
 
@@ -259,10 +259,10 @@ class CollectionTest extends TestCase
 
     public function testCountInterface(): void
     {
-        $collection = new RationalCollection([
+        $collection = new RationalCollection(
             RationalNumber::fromFloat(1),
             RationalNumber::fromFloat(2)
-        ]);
+        );
 
         $this->assertCount(2, $collection);
         $this->assertEquals(2, count($collection));
@@ -278,7 +278,7 @@ class CollectionTest extends TestCase
             RationalNumber::fromFloat(3)
         ];
 
-        $collection = new RationalCollection($numbers);
+        $collection = new RationalCollection(...$numbers);
 
         $sum = 0;
         foreach ($collection as $number) {
@@ -292,10 +292,10 @@ class CollectionTest extends TestCase
 
     public function testOffsetExists(): void
     {
-        $collection = new RationalCollection([
+        $collection = new RationalCollection(
             RationalNumber::fromFloat(1),
             RationalNumber::fromFloat(2)
-        ]);
+        );
 
         $this->assertTrue(isset($collection[0]));
         $this->assertTrue(isset($collection[1]));
@@ -304,10 +304,10 @@ class CollectionTest extends TestCase
 
     public function testOffsetGet(): void
     {
-        $collection = new RationalCollection([
+        $collection = new RationalCollection(
             RationalNumber::fromFloat(10),
             RationalNumber::fromFloat(20)
-        ]);
+        );
 
         $this->assertEqualsWithDelta(10.0, $collection[0]->getFloat(), 1e-12);
         $this->assertEqualsWithDelta(20.0, $collection[1]->getFloat(), 1e-12);
@@ -315,7 +315,7 @@ class CollectionTest extends TestCase
 
     public function testOffsetSetThrows(): void
     {
-        $collection = new RationalCollection([RationalNumber::fromFloat(1)]);
+        $collection = new RationalCollection(RationalNumber::fromFloat(1));
 
         $this->expectException(ImmutableCollectionException::class);
         $this->expectExceptionMessage('$collection = $collection->add($number)');
@@ -325,7 +325,7 @@ class CollectionTest extends TestCase
 
     public function testOffsetSetAtAnIndexThrows(): void
     {
-        $collection = new RationalCollection([RationalNumber::fromFloat(1)]);
+        $collection = new RationalCollection(RationalNumber::fromFloat(1));
 
         try {
             $collection[0] = RationalNumber::fromFloat(5);
@@ -340,7 +340,7 @@ class CollectionTest extends TestCase
 
     public function testOffsetUnsetThrows(): void
     {
-        $collection = new RationalCollection([RationalNumber::fromFloat(1)]);
+        $collection = new RationalCollection(RationalNumber::fromFloat(1));
 
         $this->expectException(ImmutableCollectionException::class);
         $this->expectExceptionMessage('$collection = $collection->filter(...)');
@@ -350,27 +350,43 @@ class CollectionTest extends TestCase
 
     public function testConstructorRejectsNonRationalElements(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Value must be a RationalNumber instance.');
+        $this->expectException(\TypeError::class);
 
-        new RationalCollection([RationalNumber::fromFloat(1), 'not a rational number']);
+        $values = [RationalNumber::fromFloat(1), 'not a rational number'];
+        new RationalCollection(...$values);
     }
 
-    public function testConstructorReindexesElements(): void
+    public function testConstructorReindexesUnpackedArrays(): void
     {
-        $collection = new RationalCollection([5 => RationalNumber::fromFloat(1), 'a' => RationalNumber::fromFloat(2)]);
+        // Gaps in integer keys.
+        $values = [5 => RationalNumber::fromFloat(1), 9 => RationalNumber::fromFloat(3)];
+        $collection = new RationalCollection(...$values);
 
         $this->assertSame([0, 1], array_keys($collection->toArray()));
-        $this->assertSame('1/1', $collection->min()->toString());
+        $this->assertSame('1/1', $collection[0]?->toString());
+
+        // String keys are unpacked as named arguments, which the variadic parameter keeps.
+        $named = ['a' => RationalNumber::fromFloat(2), 'b' => RationalNumber::fromFloat(4)];
+        $collection = new RationalCollection(...$named);
+
+        $this->assertSame([0, 1], array_keys($collection->toArray()));
+        $this->assertSame('4/1', $collection[1]?->toString());
+    }
+
+    public function testMapRejectsCallbacksThatDoNotReturnRationalNumbers(): void
+    {
+        $this->expectException(\TypeError::class);
+
+        (new RationalCollection(RationalNumber::fromFloat(1)))->map(fn (RationalNumber $n) => 'not a rational number');
     }
 
     public function testFilterReindexes(): void
     {
-        $collection = new RationalCollection([
+        $collection = new RationalCollection(
             RationalNumber::fromFloat(1),
             RationalNumber::fromFloat(2),
             RationalNumber::fromFloat(3),
-        ]);
+        );
 
         $odd = $collection->filter(fn (RationalNumber $n) => $n->getNumerator() % 2 === 1);
 
@@ -393,7 +409,7 @@ class CollectionTest extends TestCase
             RationalNumber::fromFloat(2)
         ];
 
-        $collection = new RationalCollection($numbers);
+        $collection = new RationalCollection(...$numbers);
         $array = $collection->toArray();
 
         $this->assertIsArray($array);
@@ -406,12 +422,12 @@ class CollectionTest extends TestCase
     public function testGradesAverageScenario(): void
     {
         // Calculate average grade
-        $grades = new RationalCollection([
+        $grades = new RationalCollection(
             RationalNumber::fromFloat(15.5),
             RationalNumber::fromFloat(17),
             RationalNumber::fromFloat(14.25),
             RationalNumber::fromFloat(16)
-        ]);
+        );
 
         $average = $grades->average();
 
@@ -422,11 +438,11 @@ class CollectionTest extends TestCase
     public function testBatchPriceProcessing(): void
     {
         // Apply tax to multiple prices
-        $prices = new RationalCollection([
+        $prices = new RationalCollection(
             RationalNumber::fromFloat(100),
             RationalNumber::fromFloat(50),
             RationalNumber::fromFloat(75)
-        ]);
+        );
 
         $withTax = $prices->map(fn ($p) => $p->increaseByPercentage('20%'));
         $total = $withTax->sum();
@@ -437,12 +453,12 @@ class CollectionTest extends TestCase
 
     public function testPriceRangeAnalysis(): void
     {
-        $prices = new RationalCollection([
+        $prices = new RationalCollection(
             RationalNumber::fromFloat(19.99),
             RationalNumber::fromFloat(24.50),
             RationalNumber::fromFloat(15.75),
             RationalNumber::fromFloat(29.99)
-        ]);
+        );
 
         $min = $prices->min();
         $max = $prices->max();
@@ -455,12 +471,12 @@ class CollectionTest extends TestCase
 
     public function testChainedOperations(): void
     {
-        $collection = new RationalCollection([
+        $collection = new RationalCollection(
             RationalNumber::fromFloat(5),
             RationalNumber::fromFloat(15),
             RationalNumber::fromFloat(25),
             RationalNumber::fromFloat(35)
-        ]);
+        );
 
         // Filter > 10, then double, then sum
         $result = $collection
@@ -474,7 +490,7 @@ class CollectionTest extends TestCase
 
     public function testSerializationRoundTrip(): void
     {
-        $collection = new RationalCollection([new RationalNumber(1, 2), new RationalNumber(-3, 4)]);
+        $collection = new RationalCollection(new RationalNumber(1, 2), new RationalNumber(-3, 4));
 
         $restored = unserialize(serialize($collection));
 
@@ -485,7 +501,7 @@ class CollectionTest extends TestCase
     public function testUnserializeRejectsNonRationalElements(): void
     {
         // Replace the serialized element list with ["abc"].
-        $payload = preg_replace('/a:1:\{.*\}\}$/s', 'a:1:{i:0;s:3:"abc";}}', serialize(new RationalCollection([new RationalNumber(1, 2)])));
+        $payload = preg_replace('/a:1:\{.*\}\}$/s', 'a:1:{i:0;s:3:"abc";}}', serialize(new RationalCollection(new RationalNumber(1, 2))));
         $this->assertIsString($payload);
 
         $this->expectException(InvalidArgumentException::class);
@@ -495,7 +511,7 @@ class CollectionTest extends TestCase
 
     public function testUnserializeReindexesElements(): void
     {
-        $payload = str_replace('a:1:{i:0;', 'a:1:{i:5;', serialize(new RationalCollection([new RationalNumber(1, 2)])));
+        $payload = str_replace('a:1:{i:0;', 'a:1:{i:5;', serialize(new RationalCollection(new RationalNumber(1, 2))));
 
         $restored = unserialize($payload);
 

@@ -173,12 +173,12 @@ echo "Final Price: $" . $finalPrice->getFloat();  // $102.00
 use RationalNumber\RationalNumber;
 use RationalNumber\Collection\RationalCollection;
 
-$grades = new RationalCollection([
+$grades = new RationalCollection(
     RationalNumber::fromFloat(15.5),
     RationalNumber::fromFloat(17),
     RationalNumber::fromFloat(14.25),
     RationalNumber::fromFloat(16)
-]);
+);
 
 echo $grades->average()->getFloat();  // 15.6875
 echo $grades->max()->getFloat();      // 17.0

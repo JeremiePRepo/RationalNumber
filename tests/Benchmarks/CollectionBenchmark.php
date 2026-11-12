@@ -25,7 +25,7 @@ class CollectionBenchmark
         for ($i = 1; $i <= 1000; $i++) {
             $numbers[] = RationalNumber::fromFloat($i * 0.5);
         }
-        $collection = new RationalCollection($numbers);
+        $collection = new RationalCollection(...$numbers);
 
         $start = microtime(true);
         $sum = $collection->sum();
@@ -49,7 +49,7 @@ class CollectionBenchmark
         for ($i = 1; $i <= 1000; $i++) {
             $numbers[] = RationalNumber::fromFloat($i);
         }
-        $collection = new RationalCollection($numbers);
+        $collection = new RationalCollection(...$numbers);
 
         $start = microtime(true);
         $average = $collection->average();
@@ -73,7 +73,7 @@ class CollectionBenchmark
         for ($i = 1; $i <= 1000; $i++) {
             $numbers[] = RationalNumber::fromFloat($i);
         }
-        $collection = new RationalCollection($numbers);
+        $collection = new RationalCollection(...$numbers);
 
         $start = microtime(true);
         $filtered = $collection->filter(fn ($n) => $n->isGreaterThan(RationalNumber::fromFloat(500)));
@@ -97,7 +97,7 @@ class CollectionBenchmark
         for ($i = 1; $i <= 1000; $i++) {
             $numbers[] = RationalNumber::fromFloat($i);
         }
-        $collection = new RationalCollection($numbers);
+        $collection = new RationalCollection(...$numbers);
 
         $start = microtime(true);
         $mapped = $collection->map(fn ($n) => $n->multiply(new RationalNumber(2, 1)));
@@ -121,7 +121,7 @@ class CollectionBenchmark
         for ($i = 1; $i <= 1000; $i++) {
             $numbers[] = RationalNumber::fromFloat(rand(1, 10000) / 100);
         }
-        $collection = new RationalCollection($numbers);
+        $collection = new RationalCollection(...$numbers);
 
         $start = microtime(true);
         $min = $collection->min();
@@ -147,7 +147,7 @@ class CollectionBenchmark
         for ($i = 1; $i <= 1000; $i++) {
             $numbers[] = RationalNumber::fromFloat($i);
         }
-        $collection = new RationalCollection($numbers);
+        $collection = new RationalCollection(...$numbers);
 
         $start = microtime(true);
 
