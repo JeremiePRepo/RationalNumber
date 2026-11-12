@@ -13,6 +13,9 @@ All notable changes to this project will be documented in this file.
 
 ### Documentation
 
+- New `docs/usage.md` guide for everyday operations (creating, reading, arithmetic, comparisons,
+  immutability, errors). "Min and Max", "Simplest Form" and "Scientific Notation" move there
+  from `docs/advanced.md`.
 - `docs/advanced.md`: "Using PHP Math Functions", with examples combining the library with
   `sin()`, `exp()`, `log()` and `**` (geometry, continuous compounding, doubling time, CAGR).
 

@@ -1,6 +1,7 @@
 # Advanced Operations
 
-This document covers advanced mathematical operations, rounding, and overflow protection.
+This document covers powers, square roots, rounding, overflow protection, and PHP math functions.
+For everyday operations (creating, reading, arithmetic, comparisons), see the [Usage Guide](usage.md).
 
 ## Table of Contents
 
@@ -53,32 +54,6 @@ A negative number throws an `InvalidArgumentException`. The root is computed dig
 intermediate values stay of the order of the result: an `IntegerOverflowException` is only thrown
 when `sqrt(value) × 10^$decimals` exceeds about 4.6 × 10^17 (with 9 decimals, values above about
 2 × 10^17). With 0 decimals, any value works.
-
-### Min and Max Operations
-
-```php
-use RationalNumber\RationalNumber;
-
-// Min and max operations
-$a = RationalNumber::fromFloat(3.5);
-$b = RationalNumber::fromFloat(2.8);
-
-$min = $a->min($b);
-echo $min->getFloat();  // 2.8
-
-$max = $a->max($b);
-echo $max->getFloat();  // 3.5
-
-// Finding min/max in array
-$prices = [
-    RationalNumber::fromFloat(10.50),
-    RationalNumber::fromFloat(8.75),
-    RationalNumber::fromFloat(12.00)
-];
-
-$minPrice = array_reduce($prices, fn($currentMin, $p) => $currentMin->min($p), $prices[0]);
-echo $minPrice->getFloat();  // 8.75
-```
 
 ## Rounding Operations
 
@@ -258,33 +233,3 @@ echo $cagr->toPercentage(2);   // "9.89%" per year
 For results that must be exact end to end, keep to the library's own operations (`add()`,
 `multiply()`, `pow()`, `sqrt($decimals)`…). For heavy scientific computing, native floats are
 the right tool; see the [library comparison](comparison.md).
-
-## Additional Operations
-
-### Simplest Form
-
-Every number is reduced to its simplest form when it is created:
-
-```php
-use RationalNumber\RationalNumber;
-
-$number = new RationalNumber(6, 8);
-echo $number->toString();  // "3/4" (automatically normalized)
-
-// Negative denominators are normalized
-$number = new RationalNumber(3, -4);
-echo $number->toString();  // "-3/4" (negative moved to numerator)
-```
-
-### Scientific Notation Support
-
-```php
-use RationalNumber\RationalNumber;
-
-// Scientific notation support in fromFloat()
-$small = RationalNumber::fromFloat(1e-10);
-echo $small->getFloat();  // 1.0E-10
-
-$large = RationalNumber::fromFloat(1.5e10);
-echo $large->getFloat();  // 15000000000
-```

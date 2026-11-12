@@ -152,6 +152,8 @@ $discounted = $price->decreaseByPercentage("15%");
 echo $discounted->getFloat();  // 85
 ```
 
+See the **[Usage Guide](docs/usage.md)** for every everyday operation, with their results and errors.
+
 ## Key Examples
 
 ### Financial Calculation
@@ -206,9 +208,8 @@ echo $restored->getFloat();  // 99.99
 
 ## Documentation
 
-For advanced usage, see:
-
-- **[Advanced Operations](docs/advanced.md)** - Power, sqrt, rounding, overflow protection
+- **[Usage Guide](docs/usage.md)** - Creating, reading, arithmetic, comparisons, errors
+- **[Advanced Operations](docs/advanced.md)** - Power, sqrt, rounding, overflow protection, PHP math functions
 - **[Collections](docs/collections.md)** - Batch processing with RationalCollection
 - **[Serialization](docs/serialization.md)** - JSON, arrays, persistence
 - **[Percentage Operations](docs/percentage.md)** - Complete percentage guide
@@ -261,19 +262,6 @@ Coverage includes:
 - Percentage calculations
 - JSON serialization and collections
 - PHP 8.4+ compatibility
-
-## Creating Numbers
-
-Use the constructor and the static constructors:
-
-```php
-use RationalNumber\RationalNumber;
-
-$number = new RationalNumber(3, 4);
-$number = RationalNumber::fromFloat(2.5);
-$number = RationalNumber::fromPercentage("50%");
-$number = RationalNumber::fromString("3/4");
-```
 
 ## Upgrading from 2.x
 
