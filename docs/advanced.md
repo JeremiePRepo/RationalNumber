@@ -7,6 +7,7 @@ This document covers advanced mathematical operations, rounding, and overflow pr
 - [Advanced Mathematical Operations](#advanced-mathematical-operations)
 - [Rounding Operations](#rounding-operations)
 - [Overflow Protection](#overflow-protection)
+- [Using PHP Math Functions](#using-php-math-functions)
 
 ## Advanced Mathematical Operations
 
@@ -179,6 +180,84 @@ try {
 BCMath, even when they are installed. Use an arbitrary precision library such as
 [brick/math](https://github.com/brick/math) (`BigRational`) instead; see the
 [library comparison](comparison.md).
+
+## Using PHP Math Functions
+
+The library has no trigonometric, logarithmic or exponential functions: their results are
+irrational (sin(1), e, ln(2)…), so no fraction can hold them exactly. Combine it with PHP's math
+functions instead:
+
+1. convert to a float with `getFloat()` and call the PHP function;
+2. bring the result back with `RationalNumber::fromFloat()`;
+3. round it to the precision you need with `round()`: the float is only an approximation, so
+   keeping its 17 significant digits makes the following operations heavier for nothing.
+
+The float step is the only place where precision is lost. Everything before and after it stays
+exact.
+
+### Geometry: height of a ramp
+
+```php
+use RationalNumber\RationalNumber;
+
+$length = RationalNumber::fromString('3.5');                    // metres
+
+$sin30 = RationalNumber::fromFloat(sin(deg2rad(30)));
+echo $sin30->toString();   // "24999999999999997/50000000000000000": the float error is visible
+
+$sin30 = $sin30->round(1000000);                                // 6 decimal places
+echo $sin30->toString();   // "1/2"
+
+echo $length->multiply($sin30)->toString();   // "7/4" (1.75 m), exact from here on
+```
+
+### Finance: continuous compounding
+
+`A = P × e^(r × t)`: only `e^(r × t)` goes through a float.
+
+```php
+$capital = RationalNumber::fromString('1000');
+$rate = RationalNumber::fromPercentage('5%');
+$years = 3;
+
+$factor = RationalNumber::fromFloat(exp($rate->getFloat() * $years))->round(1000000000);
+$amount = $capital->multiply($factor)->round(100);   // to the cent
+
+echo $amount->getFloat();   // 1161.83
+```
+
+### Estimate with floats, verify exactly: doubling time
+
+Logarithms give an estimate; `pow()` then checks it without any rounding error.
+
+```php
+$growth = RationalNumber::one()->add(RationalNumber::fromPercentage('10%'));   // 11/10 per year
+$two = new RationalNumber(2);
+
+$years = (int) ceil(log(2) / log($growth->getFloat()));   // 8
+
+// Exact check: 1.1^8 >= 2 and 1.1^7 < 2
+var_dump($growth->pow($years)->isGreaterThanOrEqual($two));   // true
+var_dump($growth->pow($years - 1)->isLessThan($two));         // true
+```
+
+### Average growth rate (CAGR)
+
+The ratio is exact; only its 4th root goes through a float.
+
+```php
+$start = RationalNumber::fromString('120000');
+$end = RationalNumber::fromString('175000');
+
+$ratio = $end->divideBy($start);   // 35/24, exact
+$cagr = RationalNumber::fromFloat($ratio->getFloat() ** (1 / 4) - 1)->round(10000);
+
+echo $cagr->toPercentage(2);   // "9.89%" per year
+```
+
+For results that must be exact end to end, keep to the library's own operations (`add()`,
+`multiply()`, `pow()`, `sqrt($decimals)`…). For heavy scientific computing, native floats are
+the right tool; see the [library comparison](comparison.md).
 
 ## Additional Operations
 

@@ -43,13 +43,14 @@ This guide compares `RationalNumber` with alternative PHP libraries for precise 
 - ✅ **Immutable**: All operations return new instances (safe concurrency)
 - ✅ **Type safety**: Full PHP 8.4+ type hints and strict types
 - ✅ **Rich features**: Collections, JSON serialization, percentage operations
-- ✅ **Well-tested**: 231 tests with 499 assertions
+- ✅ **Well-tested**: 378 tests with 767 assertions
 - ✅ **Clear errors**: Overflow protection with helpful messages
 
 **Limitations:**
 - ❌ Limited to PHP_INT_MAX (~9.2 quintillion on 64-bit)
-- ❌ No trigonometric functions (sin, cos, tan)
-- ❌ No logarithms or exponential functions
+- ⚠️ No built-in trigonometric, logarithmic or exponential functions (their results are
+  irrational): combine the library with PHP's `sin()`, `log()`, `exp()`… as shown in
+  [Using PHP Math Functions](advanced.md#using-php-math-functions)
 - ❌ Slower than native floats (but still fast)
 
 **Installation:**
