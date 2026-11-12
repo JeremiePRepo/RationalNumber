@@ -342,7 +342,7 @@ class RationalNumberTest extends TestCase
         $this->assertEquals("3/4", (string)$number);
     }
 
-    // Tests for comparison methods (Comparable interface)
+    // Tests for comparison methods
 
     public function testEquals(): void
     {

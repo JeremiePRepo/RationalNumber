@@ -121,6 +121,7 @@ final readonly class RationalCollection implements \Countable, \IteratorAggregat
     {
         return self::fromList([...$this->numbers, $number]);
     }
+
     /**
      * Get a RationalNumber at a specific index.
      *
@@ -167,7 +168,7 @@ final readonly class RationalCollection implements \Countable, \IteratorAggregat
             throw new EmptyCollectionException("Cannot calculate average of an empty collection.");
         }
 
-        $count = RationalNumber::fromFloat(count($this->numbers));
+        $count = new RationalNumber(count($this->numbers));
         return $this->sum()->divideBy($count);
     }
 
@@ -184,9 +185,9 @@ final readonly class RationalCollection implements \Countable, \IteratorAggregat
         }
 
         $min = $this->numbers[0];
-        for ($i = 1, $count = count($this->numbers); $i < $count; $i++) {
-            if ($this->numbers[$i]->isLessThan($min)) {
-                $min = $this->numbers[$i];
+        foreach ($this->numbers as $n) {
+            if ($n->compareTo($min) < 0) {
+                $min = $n;
             }
         }
 
@@ -206,9 +207,9 @@ final readonly class RationalCollection implements \Countable, \IteratorAggregat
         }
 
         $max = $this->numbers[0];
-        for ($i = 1, $count = count($this->numbers); $i < $count; $i++) {
-            if ($this->numbers[$i]->isGreaterThan($max)) {
-                $max = $this->numbers[$i];
+        foreach ($this->numbers as $n) {
+            if ($n->compareTo($max) > 0) {
+                $max = $n;
             }
         }
 
@@ -241,7 +242,7 @@ final readonly class RationalCollection implements \Countable, \IteratorAggregat
     /**
      * Get all RationalNumbers as an array.
      *
-     * @return RationalNumber[] Array of all RationalNumber instances.
+     * @return list<RationalNumber> All RationalNumber instances, indexed from 0.
      */
     public function toArray(): array
     {
@@ -257,7 +258,6 @@ final readonly class RationalCollection implements \Countable, \IteratorAggregat
     {
         return empty($this->numbers);
     }
-
 
     // ========== Countable Interface ==========
 

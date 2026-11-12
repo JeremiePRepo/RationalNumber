@@ -295,11 +295,7 @@ final readonly class RationalNumber implements \JsonSerializable
      */
     public function toPercentage(int $decimalPlaces = 2): string
     {
-        if ($decimalPlaces < 0 || $decimalPlaces > self::MAX_PERCENTAGE_DECIMALS) {
-            throw new InvalidArgumentException(
-                "Decimal places must be between 0 and " . self::MAX_PERCENTAGE_DECIMALS . "."
-            );
-        }
+        self::checkDecimalPlaces($decimalPlaces, self::MAX_PERCENTAGE_DECIMALS);
 
         // |x| = q + r / den, so |x| * 100 = 100 * q + r * 100 / den. The integer part q is only
         // written out (never multiplied, so no overflow); the fraction is scaled and rounded.
@@ -323,7 +319,9 @@ final readonly class RationalNumber implements \JsonSerializable
             : '';
 
         // Same format as number_format(): "," between thousands, "." before decimals, no "-0".
-        $grouped = strrev(implode(',', str_split(strrev($integerDigits), 3)));
+        $grouped = strlen($integerDigits) > 3
+            ? strrev(implode(',', str_split(strrev($integerDigits), 3)))
+            : $integerDigits;
         $negative = $this->numerator < 0 && ($quotient > 0 || $fraction > 0);
 
         return ($negative ? '-' : '') . $grouped . $fractionDigits . '%';
@@ -476,15 +474,17 @@ final readonly class RationalNumber implements \JsonSerializable
         while (true) {
             // Floor division: the remainders are in [0, b) and [0, d). Computing the remainder
             // with % rather than a - q * b avoids an overflow for large negative values.
+            $quotientA = intdiv($a, $b);
             $remainderA = $a % $b;
-            $remainderC = $c % $d;
-            $quotientA = intdiv($a, $b) - ($remainderA < 0 ? 1 : 0);
-            $quotientC = intdiv($c, $d) - ($remainderC < 0 ? 1 : 0);
             if ($remainderA < 0) {
                 $remainderA += $b;
+                $quotientA--;
             }
+            $quotientC = intdiv($c, $d);
+            $remainderC = $c % $d;
             if ($remainderC < 0) {
                 $remainderC += $d;
+                $quotientC--;
             }
 
             if ($quotientA !== $quotientC) {
@@ -514,11 +514,8 @@ final readonly class RationalNumber implements \JsonSerializable
         $fraction = $this->roundedFraction($multiplier);
 
         self::checkMultiplicationOverflow($q, $multiplier, 'rounding');
-        $magnitude = $q * $multiplier;
-        if ($magnitude > PHP_INT_MAX - $fraction) {
-            throw IntegerOverflowException::create("Operation would cause integer overflow during rounding.");
-        }
-        $magnitude += $fraction;
+        self::checkAdditionOverflow($q * $multiplier, $fraction, 'rounding');
+        $magnitude = $q * $multiplier + $fraction;
 
         return $this->numerator < 0 ? -$magnitude : $magnitude;
     }
@@ -552,15 +549,17 @@ final readonly class RationalNumber implements \JsonSerializable
         }
 
         // a * b / m = a * floor(b / m) + a * (b mod m) / m. The first term is the big one.
-        self::checkMultiplicationOverflow($a, intdiv($b, $m), 'rounding');
-        $quotient = $a * intdiv($b, $m);
+        $bOverM = intdiv($b, $m);
+        self::checkMultiplicationOverflow($a, $bOverM, 'rounding');
+        $quotient = $a * $bOverM;
 
         // a * (b mod m), both factors below m: binary multiplication modulo m, keeping the quotient
-        // (it stays below b mod m) and the remainder below m at every step.
+        // (it stays below b mod m) and the remainder below m at every step. Starting at the highest
+        // set bit of the factor skips the steps that would only double (0, 0).
         $factor = $b % $m;
         $q = 0;
         $r = 0;
-        for ($bit = 62; $bit >= 0; $bit--) {
+        for ($bit = strlen(decbin($factor)) - 1; $bit >= 0; $bit--) {
             // (q, r) <- 2 * (q, r)
             $q *= 2;
             if ($r >= $m - $r) {
@@ -581,9 +580,7 @@ final readonly class RationalNumber implements \JsonSerializable
             }
         }
 
-        if ($quotient > PHP_INT_MAX - $q) {
-            throw IntegerOverflowException::create("Operation would cause integer overflow during rounding.");
-        }
+        self::checkAdditionOverflow($quotient, $q, 'rounding');
 
         return [$quotient + $q, $r];
     }
@@ -718,17 +715,16 @@ final readonly class RationalNumber implements \JsonSerializable
             throw new InvalidArgumentException("Cannot calculate square root of a negative number.");
         }
 
-        if ($decimals < 0 || $decimals > self::MAX_SQRT_DECIMALS) {
-            throw new InvalidArgumentException("Decimal places must be between 0 and " . self::MAX_SQRT_DECIMALS . ".");
-        }
+        self::checkDecimalPlaces($decimals, self::MAX_SQRT_DECIMALS);
 
         // Digit by digit, as in long division: start from the integer square root of the integer
         // part of x, then append one decimal per step, bringing down the next two decimal digits
         // of x. Invariant after k steps: root^2 + rest + r / den = x * 100^k, with 0 <= rest <= 2 * root,
         // so the intermediate values stay of the order of the result.
+        $integerPart = intdiv($this->numerator, $this->denominator);
         $r = $this->numerator % $this->denominator;
-        $root = self::isqrt(intdiv($this->numerator, $this->denominator));
-        $rest = intdiv($this->numerator, $this->denominator) - $root * $root;
+        $root = self::isqrt($integerPart);
+        $rest = $integerPart - $root * $root;
 
         for ($i = 0; $i < $decimals; $i++) {
             if ($root > self::MAX_SQRT_STEP_ROOT) {
@@ -757,7 +753,7 @@ final readonly class RationalNumber implements \JsonSerializable
 
         // Round to nearest: up when root^2 + rest + r / den >= (root + 1/2)^2 = root^2 + root + 1/4.
         $roundUp = $rest > $root
-            || ($rest === $root && $r >= intdiv($this->denominator, 4) + ($this->denominator % 4 === 0 ? 0 : 1));
+            || ($rest === $root && $r >= intdiv($this->denominator - 1, 4) + 1);   // r / den >= 1/4
 
         return new self($roundUp ? $root + 1 : $root, 10 ** $decimals);
     }
@@ -828,10 +824,10 @@ final readonly class RationalNumber implements \JsonSerializable
      */
     public function floor(): RationalNumber
     {
+        // intdiv() truncates towards zero, and % has the sign of the numerator: step down when negative.
         $quotient = intdiv($this->numerator, $this->denominator);
 
-        // intdiv() truncates towards zero: step down for negative non-integers.
-        return new self($this->numerator < 0 && $this->numerator % $this->denominator !== 0 ? $quotient - 1 : $quotient);
+        return new self($this->numerator % $this->denominator < 0 ? $quotient - 1 : $quotient);
     }
 
     /**
@@ -841,10 +837,10 @@ final readonly class RationalNumber implements \JsonSerializable
      */
     public function ceil(): RationalNumber
     {
+        // intdiv() truncates towards zero, and % has the sign of the numerator: step up when positive.
         $quotient = intdiv($this->numerator, $this->denominator);
 
-        // intdiv() truncates towards zero: step up for positive non-integers.
-        return new self($this->numerator > 0 && $this->numerator % $this->denominator !== 0 ? $quotient + 1 : $quotient);
+        return new self($this->numerator % $this->denominator > 0 ? $quotient + 1 : $quotient);
     }
 
     /**
@@ -999,6 +995,30 @@ final readonly class RationalNumber implements \JsonSerializable
             throw IntegerOverflowException::create(
                 sprintf("Operation would cause integer overflow during %s.", $operation)
             );
+        }
+    }
+
+    /**
+     * Check if the sum of two non-negative ints would cause integer overflow.
+     *
+     * @throws IntegerOverflowException if $a + $b > PHP_INT_MAX.
+     */
+    private static function checkAdditionOverflow(int $a, int $b, string $operation): void
+    {
+        if ($a > PHP_INT_MAX - $b) {
+            throw IntegerOverflowException::create(
+                sprintf("Operation would cause integer overflow during %s.", $operation)
+            );
+        }
+    }
+
+    /**
+     * @throws InvalidArgumentException if $decimals is not between 0 and $max.
+     */
+    private static function checkDecimalPlaces(int $decimals, int $max): void
+    {
+        if ($decimals < 0 || $decimals > $max) {
+            throw new InvalidArgumentException("Decimal places must be between 0 and {$max}.");
         }
     }
 }
