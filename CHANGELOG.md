@@ -3,7 +3,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [3.0.0] - Unreleased
+## [3.0.0] - 2026-11-12
 
 A smaller and fully exact API. Code that runs without deprecation warnings on 2.11 needs only
 the changes listed in [UPGRADE-3.0.md](UPGRADE-3.0.md#changes-211-cannot-warn-about).
